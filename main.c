@@ -1,3 +1,6 @@
+#include <math.h>
+#include <stdlib.h>
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -42,6 +45,43 @@ int main(void)
                 p[1] = 50;
                 p[2] = 200;
             }
+        }
+    }
+
+    for (int x = 0; x < img.width; ++x)
+    {
+        for (int y = 0; y < img.height; ++y)
+        {
+            int count = 0;
+            int r = 0;
+            int g = 0;
+            int b = 0;
+
+            for (int i = -1; i <= 1; ++i)
+            {
+                for (int j = -1; j <= 1; ++j)
+                {
+                    int dx = x + i;
+                    int dy = y + j;
+
+                    if ( (dx < 0 || dx >= img.width) || (dy < 0 || dy >= img.height) ) { continue; }
+
+                    ++count;
+                    unsigned char *p = &img.data[(dy * img.width + dx) * 3];
+                    r += p[0];
+                    g += p[1];
+                    b += p[2];
+                }
+            }
+
+            r /= count;
+            g /= count;
+            b /= count;
+
+            unsigned char *p = &img.data[(y * img.width + x) * 3];
+            p[0] = r;
+            p[1] = g;
+            p[2] = b;
         }
     }
 
