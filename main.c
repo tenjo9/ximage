@@ -100,7 +100,7 @@ int main(void)
                         if (p)
                         {
                             p[0] = 70;
-                            p[1] = round( (((double)x - x1) / (x3-x1)) * 255.0);
+                            p[1] = 255 - round( (((double)x - x1) / (x3-x1)) * 255.0);
                             p[2] = 200;
                         }
                     }
