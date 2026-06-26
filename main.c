@@ -56,7 +56,7 @@ int main(void)
                     unsigned char *p = get_pixel(&img, x, y);
                     if (p)
                     {
-                        p[0] = round( (((double)x - x0-r) / (r*2.0) ) * 255.0);
+                        p[0] = round( (((double)x - (x0-r)) / (r*2.0) ) * 255.0);
                         p[1] = 50;
                         p[2] = 200;
                     }
