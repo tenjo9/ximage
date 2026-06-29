@@ -766,6 +766,158 @@ struct Glyph glyphs[] =
         }
     },
 
+
+    ['1'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 0, 1, 0, 0,
+            0, 1, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            1, 1, 1, 1, 1,
+        }
+    },
+
+    ['2'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 1, 1, 1, 0,
+            1, 0, 0, 0, 1,
+            0, 0, 0, 0, 1,
+            0, 0, 1, 1, 0,
+            0, 1, 0, 0, 0,
+            1, 0, 0, 0, 0,
+            1, 1, 1, 1, 1,
+        }
+    },
+
+    ['3'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 1, 1, 1, 0,
+            1, 0, 0, 0, 1,
+            0, 0, 0, 0, 1,
+            0, 0, 1, 1, 0,
+            0, 0, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            0, 1, 1, 1, 0,
+        }
+    },
+
+    ['4'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 0, 0, 1, 1,
+            0, 0, 1, 0, 1,
+            0, 1, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            1, 1, 1, 1, 1,
+            0, 0, 0, 0, 1,
+            0, 0, 0, 0, 1,
+        }
+    },
+
+    ['5'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            1, 1, 1, 1, 1,
+            1, 0, 0, 0, 0,
+            1, 1, 1, 1, 0,
+            0, 0, 0, 0, 1,
+            0, 0, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            0, 1, 1, 1, 0,
+        }
+    },
+
+    ['6'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 0, 1, 1, 0,
+            0, 1, 0, 0, 0,
+            1, 0, 0, 0, 0,
+            1, 1, 1, 1, 0,
+            1, 0, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            0, 1, 1, 1, 0,
+        }
+    },
+
+    ['7'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            1, 1, 1, 1, 1,
+            1, 0, 0, 0, 1,
+            0, 0, 0, 0, 1,
+            0, 0, 0, 1, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+        }
+    },
+
+    ['8'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 1, 1, 1, 0,
+            1, 0, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            0, 1, 1, 1, 0,
+            1, 0, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            0, 1, 1, 1, 0,
+        }
+    },
+
+    ['9'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 1, 1, 1, 0,
+            1, 0, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            0, 1, 1, 1, 1,
+            0, 0, 0, 0, 1,
+            0, 0, 0, 1, 0,
+            0, 1, 1, 0, 0,
+        }
+    },
+
+    ['0'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 1, 1, 1, 0,
+            1, 0, 0, 0, 1,
+            1, 0, 0, 1, 1,
+            1, 0, 1, 0, 1,
+            1, 1, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            0, 1, 1, 1, 0,
+        }
+    },
+
+
     [' '] =
     {
         5, 1, 0,
@@ -777,20 +929,150 @@ struct Glyph glyphs[] =
 
     ['.'] =
     {
-        1, 1, 0,
+        1, 2, 0,
         (unsigned char [])
         {
+            1,
             1,
         }
     },
 
     [','] =
     {
-        1, 2, 1,
+        1, 3, 1,
         (unsigned char [])
         {
             1,
             1,
+            1,
+        }
+    },
+
+    ['\''] =
+    {
+        1, 7, 0,
+        (unsigned char [])
+        {
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+        }
+    },
+
+    [':'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 0, 0, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 0, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 0, 0, 0,
+        }
+    },
+
+    ['_'] =
+    {
+        5, 1, 0,
+        (unsigned char [])
+        {
+            1, 1, 1, 1, 1,
+        }
+    },
+
+    ['+'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            1, 1, 1, 1, 1,
+            0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+        }
+    },
+
+    ['-'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+            1, 1, 1, 1, 1,
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+        }
+    },
+
+    ['*'] =
+    {
+        5, 6, 0,
+        (unsigned char [])
+        {
+            0, 1, 0, 1, 0,
+            0, 0, 1, 0, 0,
+            0, 1, 0, 1, 0,
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+        }
+    },
+
+    ['/'] =
+    {
+        5, 7, 0,
+        (unsigned char [])
+        {
+            0, 0, 0, 0, 1,
+            0, 0, 0, 1, 0,
+            0, 0, 0, 1, 0,
+            0, 0, 1, 0, 0,
+            0, 1, 0, 0, 0,
+            0, 1, 0, 0, 0,
+            1, 0, 0, 0, 0,
+        }
+    },
+
+    ['('] =
+    {
+        3, 7, 0,
+        (unsigned char [])
+        {
+            0, 0, 1,
+            0, 1, 0,
+            1, 0, 0,
+            1, 0, 0,
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1,
+        }
+    },
+
+    [')'] =
+    {
+        3, 7, 0,
+        (unsigned char [])
+        {
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1,
+            0, 0, 1,
+            0, 0, 1,
+            0, 1, 0,
+            1, 0, 0,
         }
     },
 };
@@ -875,9 +1157,11 @@ int main(void)
 {
     struct Image img = {0};
 
-    img.width = 800;
-    img.height = 600;
+    img.width = 1920;
+    img.height = 1080;
     img.data = malloc(img.width * img.height * 3);
+
+    unsigned char white[] = {255, 255, 255};
 
 
     if (1)
@@ -889,18 +1173,103 @@ int main(void)
                 unsigned char *p = get_pixel(&img, x, y);
                 p[0] = 0;
                 p[1] = 0;
-                p[2] = 0;
+                p[2] = 240;
             }
         }
     }
 
 
+    if (0)
+    {
+        char lorem[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+        char abc[] = "Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz";
+        draw_text(&img, lorem, 100, 100, 3, img.width-100, white);
+    }
+
+
     if (1)
     {
-        char lorem[] = "To Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-        char abc[] = "Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz";
-        unsigned char white[] = {255, 255, 255};
-        draw_text(&img, lorem, 100, 100, 3, img.width-100, white);
+        int scale = 4;
+        int left = 100;
+        int right = img.width - 100;
+        int ycursor = 100;
+        int block_ystep = 70;
+        int line_ystep = 40;
+
+        draw_text(&img,
+            "A problem has been detected and GNU/Linux has been shut down to prevent",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
+
+        draw_text(&img,
+            "damage to your computer.",
+            left, ycursor, scale, right, white);
+        ycursor += block_ystep;
+
+
+        draw_text(&img,
+            "NFSW_FOLDER_OVERFLOW",
+            left, ycursor, scale, right, white);
+        ycursor += block_ystep;
+
+
+        draw_text(&img,
+            "If this if the first time you've seen this Stop error screen, restart your",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
+
+        draw_text(&img,
+            "computer. If this screen appears again, follow these steps:",
+            left, ycursor, scale, right, white);
+        ycursor += block_ystep;
+
+
+        draw_text(&img,
+            "Check to make sure any new hardware or software is properly installed. If this",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
+
+        draw_text(&img,
+            "is a new installation, ask your hardware or software manufacturer for any",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
+
+        draw_text(&img,
+            "GNU/Linux updates you might need.",
+            left, ycursor, scale, right, white);
+        ycursor += block_ystep;
+
+
+        draw_text(&img,
+            "If problems continue, disable or remove any new installed hardware of software.",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
+
+        draw_text(&img,
+            "Disable BIOS memory options such as caching of shadowing. If you need to use",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
+
+        draw_text(&img,
+            "Safe Mode to remove or disable components, restart your computer, press F8",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
+
+        draw_text(&img,
+            "to select Advansed Startup Options, and then select Safe Mode.",
+            left, ycursor, scale, right, white);
+        ycursor += block_ystep;
+
+
+        draw_text(&img,
+            "Technical information:",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
+
+        draw_text(&img,
+            "*** STOP: 0x00000069 (0x00000042, 0x00000228, 0x00001377, 0x00000067)",
+            left, ycursor, scale, right, white);
+        ycursor += line_ystep;
     }
 
 
