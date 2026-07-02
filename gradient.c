@@ -1,9 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define CURVE_IMPLEMENTATION
-#include "curve.h"
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -18,6 +15,51 @@ unsigned char *get_pixel(struct Image *img, int x, int y)
     if (x < 0 || x >= img->width || y < 0 || y >= img->height) { return NULL; }
     return &img->data[(y * img->width + x) * 3];
 }
+
+#define draw_triangle(img, x1, y1, x2, y2, x3, y3, r, g, b)\
+do\
+{\
+    double left, right;\
+    double bottom, top;\
+\
+    left = x1;\
+    right = x1;\
+    if (left > x2)  { left = x2; }\
+    if (left > x3)  { left = x3; }\
+    if (right < x2) { right = x2; }\
+    if (right < x3) { right = x3; }\
+\
+    bottom = y1;\
+    top = y1;\
+    if (bottom < y2)  { bottom = y2; }\
+    if (bottom < y3)  { bottom = y3; }\
+    if (top > y2)     { top = y2; }\
+    if (top > y3)     { top = y3; }\
+\
+    if (1)\
+    for (int x = (int)floor(left); x <= (int)ceil(right); ++x)\
+    {\
+        for (int y = (int)floor(top); y <= (int)ceil(bottom); ++y)\
+        {\
+            double D = (y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3);\
+            double l1 = ( (y2 - y3)*(x - x3) + (x3 - x2)*(y - y3) )/D;\
+            double l2 = ( (y3 - y1)*(x - x3) + (x1 - x3)*(y - y3) )/D;\
+            double l3 = 1 - l1 - l2;\
+\
+            if (l1 >= 0.0 && l2 >= 0.0 && l3 >= 1.0e-10)\
+            {\
+                unsigned char *p = get_pixel(img, x, y);\
+                if (p)\
+                {\
+                    p[0] = r;\
+                    p[1] = g;\
+                    p[2] = b;\
+                }\
+            }\
+        }\
+    }\
+}\
+while (0);
 
 int main(void)
 {
@@ -45,23 +87,30 @@ int main(void)
 
     if (1)
     {
-        int r = 100;
-        int x0 = img.width/2.0, y0 = img.height/2.0;
-        for (int x = x0-r; x < x0+r; ++x)
+        double r = (0.3 * (double)img.width);
+        double x0 = (double)img.width/2.0, y0 = (double)img.height/2.0;
+
+        if (1)
         {
-            for (int y = y0-r; y < y0+r; ++y)
+            double left = floor(x0-r), right = ceil(x0+r);
+            double top = floor(y0-r), bottom = ceil(y0+r);
+
+            for (int x = (int)left; x < (int)right; ++x)
             {
-                double mx = (double)x - (double)x0 + 0.5;
-                double my = (double)y - (double)y0 + 0.5;
-                int cond = ( mx*mx + my*my - r*r ) <= 0.00001;
-                if (cond)
+                for (int y = (int)top; y < (int)bottom; ++y)
                 {
-                    unsigned char *p = get_pixel(&img, x, y);
-                    if (p)
+                    double mx = (double)x - (double)x0 + 0.5;
+                    double my = (double)y - (double)y0 + 0.5;
+                    int cond = ( mx*mx + my*my - r*r ) <= 0.00001;
+                    if (cond)
                     {
-                        p[0] = round( (((double)x - (x0-r)) / (r*2.0) ) * 255.0);
-                        p[1] = 50;
-                        p[2] = 200;
+                        unsigned char *p = get_pixel(&img, x, y);
+                        if (p)
+                        {
+                            p[0] = round( (((double)x - (x0-r)) / (r*2.0) ) * 255.0);
+                            p[1] = 50;
+                            p[2] = 200;
+                        }
                     }
                 }
             }
@@ -72,43 +121,36 @@ int main(void)
         {
             double xscale = r, yscale = -r;
             double xoffset = x0, yoffset = y0;
+            #define c2sx(x) ((x)*xscale + xoffset)
+            #define c2sy(y) ((y)*yscale + yoffset)
 
             double x1f = -sqrt(3.0)/2.0, y1f = -0.5;
             double x2f = 0.0,            y2f = 1.0;
             double x3f = sqrt(3.0)/2.0,  y3f = -0.5;
 
-            int x1 = (x1f) * xscale + xoffset, y1 = (y1f) * yscale + yoffset;
-            int x2 = (x2f) * xscale + xoffset, y2 = (y2f) * yscale + yoffset;
-            int x3 = (x3f) * xscale + xoffset, y3 = (y3f) * yscale + yoffset;
+            double x1 = c2sx(x1f), y1 = c2sy(y1f);
+            double x2 = c2sx(x2f), y2 = c2sy(y2f);
+            double x3 = c2sx(x3f), y3 = c2sy(y3f);
 
-            int left   = x0-r;
-            int right  = x0+r;
-            int top    = y0-r;
-            int bottom = y0+r;
+            draw_triangle(&img, x1, y1, x2, y2, x3, y3,
+                70,
+                255 - round( (((double)x - x1) / (x3-x1)) * 255.0),
+                200
+            );
 
+            double x4f = (x1f+x2f)*0.5, y4f = (y1f+y2f)*0.5;
+            double x5f = (x2f+x3f)*0.5, y5f = (y2f+y3f)*0.5;
+            double x6f = (x3f+x1f)*0.5, y6f = (y3f+y1f)*0.5;
 
-            if (1)
-            for (int x = left; x <= right; ++x)
-            {
-                for (int y = top; y <= bottom; ++y)
-                {
-                    double D = (y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3);
-                    double l1 = ( (y2 - y3)*(x - x3) + (x3 - x2)*(y - y3) )/D;
-                    double l2 = ( (y3 - y1)*(x - x3) + (x1 - x3)*(y - y3) )/D;
-                    double l3 = 1 - l1 - l2;
+            double x4 = c2sx(x4f), y4 = c2sy(y4f);
+            double x5 = c2sx(x5f), y5 = c2sy(y5f);
+            double x6 = c2sx(x6f), y6 = c2sy(y6f);
 
-                    if (l1 > 0.0 && l2 > 0.0 && l3 > 0.0)
-                    {
-                        unsigned char *p = get_pixel(&img, x, y);
-                        if (p)
-                        {
-                            p[0] = 70;
-                            p[1] = 255 - round( (((double)x - x1) / (x3-x1)) * 255.0);
-                            p[2] = 200;
-                        }
-                    }
-                }
-            }
+            draw_triangle(&img, x4, y4, x5, y5, x6, y6,
+                (unsigned char)(l1 * 255.0),
+                (unsigned char)(l2 * 255.0),
+                (unsigned char)(l3 * 255.0)
+            );
         }
     }
 
