@@ -16,11 +16,11 @@ unsigned char *get_pixel(struct Image *img, int x, int y)
     return &img->data[(y * img->width + x) * 3];
 }
 
-#define draw_triangle(img, x1, y1, x2, y2, x3, y3, r, g, b)\
+#define draw_triangle_macro(img, x1, y1, x2, y2, x3, y3, r, g, b)\
 do\
 {\
-    double left, right;\
-    double bottom, top;\
+    int left, right;\
+    int bottom, top;\
 \
     left = x1;\
     right = x1;\
@@ -36,17 +36,16 @@ do\
     if (top > y2)     { top = y2; }\
     if (top > y3)     { top = y3; }\
 \
-    if (1)\
-    for (int x = (int)floor(left); x <= (int)ceil(right); ++x)\
+    for (int x = left; x <= right; ++x)\
     {\
-        for (int y = (int)floor(top); y <= (int)ceil(bottom); ++y)\
+        for (int y = top; y <= bottom; ++y)\
         {\
             double D = (y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3);\
             double l1 = ( (y2 - y3)*(x - x3) + (x3 - x2)*(y - y3) )/D;\
             double l2 = ( (y3 - y1)*(x - x3) + (x1 - x3)*(y - y3) )/D;\
-            double l3 = 1 - l1 - l2;\
+            double l3 = 1.0 - l1 - l2;\
 \
-            if (l1 >= 0.0 && l2 >= 0.0 && l3 >= 1.0e-10)\
+            if (l1 >= -1e-14 && l2 >= -1e-14 && l3 >= -1e-14)\
             {\
                 unsigned char *p = get_pixel(img, x, y);\
                 if (p)\
@@ -152,6 +151,35 @@ int main(void)
                 (unsigned char)(l3 * 255.0)
             );
         }
+    }
+
+
+    if (0)
+    {
+        draw_triangle(&img, 400, 100, 700, 300, 400, 500,
+            (unsigned char)(l1 * 255),
+            (unsigned char)(l2 * 255),
+            (unsigned char)(l3 * 255)
+        );
+
+        draw_triangle(&img, 400, 500, 100, 300, 400, 100,
+            (unsigned char)(l1 * 255),
+            (unsigned char)(l2 * 255),
+            (unsigned char)(l3 * 255)
+        );
+
+
+        draw_triangle(&img, 0, 0, 20, 0, 0, 20,
+            (unsigned char)(l1 * 255),
+            (unsigned char)(l2 * 255),
+            (unsigned char)(l3 * 255)
+        );
+
+        draw_triangle(&img, 0, 20, 20, 20, 20, 0,
+            (unsigned char)(l1 * 255),
+            (unsigned char)(l2 * 255),
+            (unsigned char)(l3 * 255)
+        );
     }
 
 
