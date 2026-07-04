@@ -11,7 +11,7 @@ struct Glyph
 };
 
 #include "minecraftish.h"
-#include "tenjo9.h"
+#include "ugly.h"
 struct Glyph *glyphs = minecraftish_font;
 
 struct Image
