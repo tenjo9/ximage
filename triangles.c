@@ -1,4 +1,4 @@
-#include <math.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -101,13 +101,28 @@ void draw_triangle_source
     }
 }
 
+uint32_t color1(double x, double y, double l1, double l2, double l3)
+{
+    (void)x; (void)y;
+
+    double r = l1;
+    double g = l2;
+    double b = l3;
+
+    return
+        (uint32_t)(r * 255)       |
+        (uint32_t)(g * 255) << 8  |
+        (uint32_t)(b * 255) << 16 |
+        (uint32_t)(0xff)    << 24;
+}
+
 int main(void)
 {
     struct Image img = {0};
 
     img.width = 800;
     img.height = 600;
-    img.data = malloc(img.width * img.height * 4);
+    img.data = malloc((size_t)(img.width * img.height * 4));
 
     if (1)
     {
@@ -117,6 +132,7 @@ int main(void)
             {
                 uint32_t *p = get_pixel(&img, x, y);
                 *p = 0xFF191919;
+                //*p = (uint32_t)0x00 | (uint32_t)0x00 << 8 | (uint32_t)0xff << 16 | (uint32_t)0xff << 24;
             }
         }
     }
@@ -133,7 +149,7 @@ int main(void)
 
         double wxs[] = {1.0,  1.0, -1.0, -1.0};
         double wys[] = {1.0, -1.0, -1.0,  1.0};
-        double angle = (30)*M_PI / 180.0;
+        double angle = (0)*M_PI / 180.0;
 
         int sxs[4];
         int sys[4];
@@ -146,21 +162,8 @@ int main(void)
         }
         for (int i = 0; i < 4; ++i) { sxs[i] = w2sx(wxs[i]); sys[i] = w2sy(wys[i]); }
 
-        uint32_t color(double x, double y, double l1, double l2, double l3)
-        {
-            double r = l1;
-            double g = l2;
-            double b = l3;
-
-            return
-                (uint32_t)(r * 255)       |
-                (uint32_t)(g * 255) << 8  |
-                (uint32_t)(b * 255) << 16 |
-                (uint32_t)(0xff) << 24;
-        }
-
-        draw_triangle_source(&img, sxs[0], sys[0], sxs[1], sys[1], sxs[2], sys[2], color);
-        draw_triangle_source(&img, sxs[2], sys[2], sxs[3], sys[3], sxs[0], sys[0], color);
+        draw_triangle_source(&img, sxs[0], sys[0], sxs[1], sys[1], sxs[2], sys[2], color1);
+        draw_triangle_source(&img, sxs[2], sys[2], sxs[3], sys[3], sxs[0], sys[0], color1);
     }
 
 
@@ -169,13 +172,13 @@ int main(void)
         struct Image buf = {0};
         buf.width = img.width;
         buf.height = img.height;
-        buf.data = malloc(buf.width * buf.height * 4);
+        buf.data = malloc((size_t)(buf.width * buf.height * 4));
 
         for (int x = 0; x < img.width; ++x)
         {
             for (int y = 0; y < img.height; ++y)
             {
-                int count = 0;
+                uint32_t count = 0;
                 uint32_t r = 0;
                 uint32_t g = 0;
                 uint32_t b = 0;
@@ -190,9 +193,9 @@ int main(void)
                         if (p)
                         {
                             ++count;
-                            b += (*p)       & 0xFF;
+                            r += (*p)       & 0xFF;
                             g += (*p >> 8)  & 0xFF;
-                            r += (*p >> 16) & 0xFF;
+                            b += (*p >> 16) & 0xFF;
                         }
                     }
                 }
@@ -202,11 +205,7 @@ int main(void)
                 b /= count;
 
                 uint32_t *p = get_pixel(&buf, x, y);
-                *p =
-                    (uint32_t)(r)       |
-                    (uint32_t)(g) << 8  |
-                    (uint32_t)(b) << 16 |
-                    (uint32_t)(0xff) << 24;
+                *p = (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(0xff) << 24;
             }
         }
 
@@ -216,5 +215,6 @@ int main(void)
 
 
     stbi_write_png("image.png", img.width, img.height, 4, (void *)img.data, img.width * 4);
+    free(img.data);
     return 0;
 }
