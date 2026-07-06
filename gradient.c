@@ -1,7 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 struct Image
@@ -131,7 +130,7 @@ int main(void)
             double x2 = c2sx(x2f), y2 = c2sy(y2f);
             double x3 = c2sx(x3f), y3 = c2sy(y3f);
 
-            draw_triangle(&img, x1, y1, x2, y2, x3, y3,
+            draw_triangle_macro(&img, x1, y1, x2, y2, x3, y3,
                 70,
                 255 - round( (((double)x - x1) / (x3-x1)) * 255.0),
                 200
@@ -145,7 +144,7 @@ int main(void)
             double x5 = c2sx(x5f), y5 = c2sy(y5f);
             double x6 = c2sx(x6f), y6 = c2sy(y6f);
 
-            draw_triangle(&img, x4, y4, x5, y5, x6, y6,
+            draw_triangle_macro(&img, x4, y4, x5, y5, x6, y6,
                 (unsigned char)(l1 * 255.0),
                 (unsigned char)(l2 * 255.0),
                 (unsigned char)(l3 * 255.0)
@@ -156,26 +155,26 @@ int main(void)
 
     if (0)
     {
-        draw_triangle(&img, 400, 100, 700, 300, 400, 500,
+        draw_triangle_macro(&img, 400, 100, 700, 300, 400, 500,
             (unsigned char)(l1 * 255),
             (unsigned char)(l2 * 255),
             (unsigned char)(l3 * 255)
         );
 
-        draw_triangle(&img, 400, 500, 100, 300, 400, 100,
+        draw_triangle_macro(&img, 400, 500, 100, 300, 400, 100,
             (unsigned char)(l1 * 255),
             (unsigned char)(l2 * 255),
             (unsigned char)(l3 * 255)
         );
 
 
-        draw_triangle(&img, 0, 0, 20, 0, 0, 20,
+        draw_triangle_macro(&img, 0, 0, 20, 0, 0, 20,
             (unsigned char)(l1 * 255),
             (unsigned char)(l2 * 255),
             (unsigned char)(l3 * 255)
         );
 
-        draw_triangle(&img, 0, 20, 20, 20, 20, 0,
+        draw_triangle_macro(&img, 0, 20, 20, 20, 20, 0,
             (unsigned char)(l1 * 255),
             (unsigned char)(l2 * 255),
             (unsigned char)(l3 * 255)
