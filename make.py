@@ -45,10 +45,14 @@ elif argc == 2:
 
         src.append(sys.argv[1])
         run = cc + warnings + src + libs
-        result = subprocess.run(run)
-        if result.returncode == 0:
+        compile_result = subprocess.run(run)
+        if compile_result.returncode == 0:
             print("Compilation successful")
-        subprocess.run(["./a.out"])
+            run_result = subprocess.run(["./a.out"])
+            if run_result.returncode == 0:
+                print("Running successful")
+            else:
+                print(f"Exited with {run_result.returncode} code")
 
 else:
     print("Too much arguments")
