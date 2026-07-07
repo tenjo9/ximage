@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -13,11 +14,11 @@ struct Image
     uint32_t *data;
 };
 
-uint32_t *get_pixel(struct Image *img, int x, int y)
-{
-    if (x < 0 || x >= img->width || y < 0 || y >= img->height) { return NULL; }
-    return &img->data[(y*img->width + x)];
-}
+#define PUT_PIXEL(img, x, y, color) *(&(img)->data[(y)*(img)->width + (x)]) = (color)
+#define GET_PIXEL(img, x, y) &(img)->data[(y)*(img)->width + (x)]
+
+#define RGBA(r, g, b, a) (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(a) << 24
+#define RGB(r, g, b) (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(0xff) << 24
 
 bool find_bbox
 (
@@ -37,7 +38,7 @@ bool find_bbox
     if (*left  < 0)          { *left = 0; }
     if (*right < 0)          { return false; }
     if (*left  > img->width) { return false; }
-    if (*right > img->width) { *right = img->width; }
+    if (*right > img->width) { *right = img->width - 1; }
 
     *bottom = y1; *top = y1;
     if (*bottom < y2)  { *bottom = y2; }
@@ -47,7 +48,7 @@ bool find_bbox
     if (*top    < 0)           { *top = 0; }
     if (*bottom < 0)           { return false; }
     if (*top    > img->height) { return false; }
-    if (*bottom > img->height) { *bottom = img->height; }
+    if (*bottom > img->height) { *bottom = img->height - 1; }
 
     return true;
 }
@@ -96,8 +97,7 @@ void draw_triangle
             double D, l1, l2, l3;
             if (is_in_triangle(x, y, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
             {
-                uint32_t *p = get_pixel(img, x, y);
-                if (p) { *p = color; }
+                PUT_PIXEL(img, x, y, color);
             }
         }
     }
@@ -109,7 +109,13 @@ void draw_triangle_source
     int x1, int y1,
     int x2, int y2,
     int x3, int y3,
-    uint32_t (*color)(double x, double y, double l1, double l2, double l3)
+    uint32_t (*color)
+    (
+        double x, double y,
+        double left, double right,
+        double bottom, double top,
+        double l1, double l2, double l3
+    )
 )
 {
     int left, right;
@@ -123,26 +129,32 @@ void draw_triangle_source
             double D, l1, l2, l3;
             if (is_in_triangle(x, y, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
             {
-                uint32_t *p = get_pixel(img, x, y);
-                if (p) { *p = color(x, y, l1, l2, l3); }
+                PUT_PIXEL(img, x, y, color(x, y, left, right, bottom, top, l1, l2, l3));
             }
         }
     }
 }
 
-uint32_t color1(double x, double y, double l1, double l2, double l3)
+uint32_t color1(double x, double y, double left, double right, double bottom, double top, double l1, double l2, double l3)
 {
-    (void)x; (void)y;
+    (void)x; (void)y; (void)left; (void)right; (void)bottom; (void)top; (void)l1; (void)l2; (void)l3;
 
-    double r = l1;
-    double g = l2;
-    double b = l3;
+    double r = x/800.0*255.0;
+    double g = 100;
+    double b = y/600.0*255.0;
 
-    return
-        (uint32_t)(r * 255)       |
-        (uint32_t)(g * 255) << 8  |
-        (uint32_t)(b * 255) << 16 |
-        (uint32_t)(0xff)    << 24;
+    return RGBA(r, g, b, 255);
+}
+
+uint32_t color2(double x, double y, double left, double right, double bottom, double top, double l1, double l2, double l3)
+{
+    (void)x; (void)y; (void)left; (void)right; (void)bottom; (void)top;
+
+    double r = l1 * 255;
+    double g = l2 * 255;
+    double b = l3 * 255;
+
+    return RGBA(r, g, b, 255);
 }
 
 int main(void)
@@ -159,14 +171,19 @@ int main(void)
         {
             for (int y = 0; y < img.height; ++y)
             {
-                uint32_t *p = get_pixel(&img, x, y);
-                *p = 0xFF191919;
+                PUT_PIXEL(&img, x, y, RGB(42, 42, 42));
             }
         }
     }
 
 
     if (1)
+    {
+        draw_triangle_source(&img, 0, 300, 400, 290, 799, 300, color1);
+    }
+
+
+    if (0)
     {
         double xscale  = 200.0, yscale  = -200.0;
         double xoffset = 400.0, yoffset =  300.0;
@@ -177,7 +194,7 @@ int main(void)
 
         double wxs[] = {1.0,  1.0, -1.0, -1.0};
         double wys[] = {1.0, -1.0, -1.0,  1.0};
-        double angle = (0)*M_PI / 180.0;
+        double angle = (30)*M_PI / 180.0;
 
         int sxs[4];
         int sys[4];
@@ -199,51 +216,3 @@ int main(void)
     free(img.data);
     return 0;
 }
-
-/*
-if (0)
-{
-    struct Image buf = {0};
-    buf.width = img.width;
-    buf.height = img.height;
-    buf.data = malloc((size_t)(buf.width * buf.height * 4));
-
-    for (int x = 0; x < img.width; ++x)
-    {
-        for (int y = 0; y < img.height; ++y)
-        {
-            uint32_t count = 0;
-            uint32_t r = 0;
-            uint32_t g = 0;
-            uint32_t b = 0;
-
-            for (int i = -1; i <= 1; ++i)
-            {
-                for (int j = -1; j <= 1; ++j)
-                {
-                    int dx = x + i;
-                    int dy = y + j;
-                    uint32_t *p = get_pixel(&img, dx, dy);
-                    if (p)
-                    {
-                        ++count;
-                        r += (*p)       & 0xFF;
-                        g += (*p >> 8)  & 0xFF;
-                        b += (*p >> 16) & 0xFF;
-                    }
-                }
-            }
-
-            r /= count;
-            g /= count;
-            b /= count;
-
-            uint32_t *p = get_pixel(&buf, x, y);
-            *p = (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(0xff) << 24;
-        }
-    }
-
-    free(img.data);
-    img.data = buf.data;
-}
-*/
