@@ -3,6 +3,7 @@
 
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 
@@ -28,7 +29,7 @@ typedef struct XImage XImage;
 
 
 uint32_t xi_blend_colors(uint32_t colorA, uint32_t colorB);
-bool xi_find_bbox(XImage *img, int x1, int y1, int x2, int y2, int x3, int y3, int *left, int *right, int *bottom, int *top);
+bool xi_find_bbox(XImage *img, int *x, int *y, size_t count, int *left, int *right, int *bottom, int *top);
 bool xi_is_in_triangle(double x, double y, int x1, int y1, int x2, int y2, int x3, int y3, double *D, double *l1, double *l2, double *l3);
 
 void xi_fill_bg(XImage *img, uint32_t color);
@@ -58,35 +59,29 @@ uint32_t xi_blend_colors(uint32_t colorA, uint32_t colorB)
     return XI_RGBA(rC, gC, bC, aB);
 }
 
-bool xi_find_bbox
-(
-    XImage *img,
-    int x1, int y1,
-    int x2, int y2,
-    int x3, int y3,
-    int *left, int *right,
-    int *bottom, int *top
-)
+// TODO: May be made it variadic
+bool xi_find_bbox(XImage *img, int *x, int *y, size_t count, int *left, int *right, int *top, int *bottom)
 {
-    *left = x1; *right = x1;
-    if (*left  > x2) { *left  = x2; }
-    if (*left  > x3) { *left  = x3; }
-    if (*right < x2) { *right = x2; }
-    if (*right < x3) { *right = x3; }
-    if (*left  < 0)            { *left = 0; }
-    if (*right < 0)            { return false; }
-    if (*left  > img->width)   { return false; }
-    if (*right > img->width-1) { *right = img->width-1; }
+    *left = x[0]; *right = x[count-1];
+    *top = y[0]; *bottom = y[count-1];
 
-    *bottom = y1; *top = y1;
-    if (*bottom < y2)  { *bottom = y2; }
-    if (*bottom < y3)  { *bottom = y3; }
-    if (*top    > y2)  { *top    = y2; }
-    if (*top    > y3)  { *top    = y3; }
-    if (*top    < 0)             { *top = 0; }
-    if (*bottom < 0)             { return false; }
-    if (*top    > img->height)   { return false; }
-    if (*bottom > img->height-1) { *bottom = img->height-1; }
+    for (size_t i = 0; i < count; ++i)
+    {
+        if (  *left > x[i]) *left   = x[i];
+        if ( *right < x[i]) *right  = x[i];
+        if (   *top > y[i]) *top    = y[i];
+        if (*bottom < y[i]) *bottom = y[i];
+    }
+
+    if (*right < 0)         return false;
+    if (*left > img->width) return false;
+    if (*top > img->height) return false;
+    if (*bottom < 0)        return false;
+
+    if (*left < 0)             *left = 0;
+    if (*right > img->width)   *right = img->width-1;
+    if (*top < 0)              *top = 0;
+    if (*bottom > img->height) *bottom = img->height-1;
 
     return true;
 }
@@ -122,33 +117,22 @@ bool xi_is_in_triangle
 
 void xi_fill_bg(XImage *img, uint32_t color)
 {
-    for (int x = 0; x < img->width; ++x)
-    {
-        for (int y = 0; y < img->height; ++y)
-        {
-            XI_PUT_PIXEL(img, x, y, color);
-        }
-    }
+    for (int i = 0; i < img->width*img->height; ++i)
+        img->data[i] = color;
 }
 
 void xi_draw_circle(XImage *img, int x0, int y0, int r, uint32_t color)
 {
-    double left = x0-r, right  = x0+r;
-    double top  = y0-r, bottom = y0+r;
+    int left = x0-r, right  = x0+r;
+    int top  = y0-r, bottom = y0+r;
 
-    if (right < 0)          { return; }
-    if (left  > img->width) { return; }
-    if (left  < 0)          { left = 0; }
-    if (right > img->width) { right = img->width; }
+    int xs[] = {x0+r, x0+r, x0-r, x0-r};
+    int ys[] = {y0+r, y0-r, y0-r, y0+r};
 
-    if (bottom < 0)             { return; }
-    if (top    > img->height)   { return; }
-    if (top    < 0)             { top = 0; }
-    if (bottom > img->height ) { bottom = img->height; }
-
-    for (int x = (int)left; x < (int)right; ++x)
+    if (xi_find_bbox(img, xs, ys, 4, &left, &right, &top, &bottom))
+    for (int x = left; x < right; ++x)
     {
-        for (int y = (int)top; y < (int)bottom; ++y)
+        for (int y = top; y < bottom; ++y)
         {
             double mx = (double)x - (double)x0 + 0.5;
             double my = (double)y - (double)y0 + 0.5;
@@ -167,10 +151,13 @@ void xi_draw_triangle
     uint32_t color
 )
 {
-    int left, right;
-    int bottom, top;
+    int left = 0, right = 0;
+    int bottom = 0, top = 0;
 
-    if (xi_find_bbox(img, x1, y1, x2, y2, x3, y3, &left, &right, &bottom, &top))
+    int xs[] = {x1, x2, x3};
+    int ys[] = {y1, y2, y3};
+
+    if (xi_find_bbox(img, xs, ys, 3, &left, &right, &top, &bottom))
     for (int x = left; x <= right; ++x)
     {
         for (int y = top; y <= bottom; ++y)
