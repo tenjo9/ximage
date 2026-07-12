@@ -2,6 +2,7 @@
 #define XIMAGE_H
 
 
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -12,7 +13,7 @@
 #define XI_GET_COLOR(img, x, y)         (img)->data[(y)*(img)->width + (x)]
 
 #define XI_RGBA(r, g, b, a) (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(a) << 24
-#define XI_RGB(r, g, b)        (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(0xff) << 24
+#define XI_RGB(r, g, b)     (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(0xff) << 24
 
 #define XI_GET_R(color) ((color) >> 0)  & 0xff
 #define XI_GET_G(color) ((color) >> 8)  & 0xff
@@ -33,6 +34,7 @@ bool xi_find_bbox(XImage *img, int *x, int *y, size_t count, int *left, int *rig
 bool xi_is_in_triangle(double x, double y, int x1, int y1, int x2, int y2, int x3, int y3, double *D, double *l1, double *l2, double *l3);
 
 void xi_fill_bg(XImage *img, uint32_t color);
+void xi_draw_rect(XImage *img, int x0, int y0, int width, int height, uint32_t color);
 void xi_draw_circle(XImage *img, int x0, int y0, int r, uint32_t color);
 void xi_draw_triangle(XImage *img, int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color);
 
@@ -121,6 +123,24 @@ void xi_fill_bg(XImage *img, uint32_t color)
         img->data[i] = color;
 }
 
+void xi_draw_rect(XImage *img, int x0, int y0, int width, int height, uint32_t color)
+{
+    int left = 0, right  = 0;
+    int top  = 0, bottom = 0;
+
+    int xs[] = {x0,        x0, x0+width, x0+width};
+    int ys[] = {y0, y0+height,       y0, y0+height};
+
+    if (xi_find_bbox(img, xs, ys, 4, &left, &right, &top, &bottom))
+    for (int x = left; x < right; ++x)
+    {
+        for (int y = top; y < bottom; ++y)
+        {
+            XI_PUT_PIXEL(img, x, y, xi_blend_colors(color, XI_GET_COLOR(img, x, y)));
+        }
+    }
+}
+
 void xi_draw_circle(XImage *img, int x0, int y0, int r, uint32_t color)
 {
     int left = x0-r, right  = x0+r;
@@ -137,7 +157,7 @@ void xi_draw_circle(XImage *img, int x0, int y0, int r, uint32_t color)
             double mx = (double)x - (double)x0 + 0.5;
             double my = (double)y - (double)y0 + 0.5;
             int cond = ( mx*mx + my*my - r*r ) <= 0.00001;
-            if (cond) { XI_PUT_PIXEL(img, x, y, color); }
+            if (cond) { XI_PUT_PIXEL(img, x, y, xi_blend_colors(color, XI_GET_COLOR(img, x, y))); }
         }
     }
 }
@@ -158,13 +178,13 @@ void xi_draw_triangle
     int ys[] = {y1, y2, y3};
 
     if (xi_find_bbox(img, xs, ys, 3, &left, &right, &top, &bottom))
-    for (int x = left; x <= right; ++x)
+    for (int x = left; x < right; ++x)
     {
-        for (int y = top; y <= bottom; ++y)
+        for (int y = top; y < bottom; ++y)
         {
             double D, l1, l2, l3;
             if (xi_is_in_triangle(x, y, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                XI_PUT_PIXEL(img, x, y, color);
+                XI_PUT_PIXEL(img, x, y, xi_blend_colors(color, XI_GET_COLOR(img, x, y)));
         }
     }
 }

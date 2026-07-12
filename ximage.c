@@ -18,8 +18,9 @@ int main(void)
     }
 
     xi_fill_bg(img, 0xff424242);
-    xi_draw_circle(img, 200, 300, 100, 0xff0000ff);
-    xi_draw_triangle(img, 500, 400, 600, 100, 700, 400, 0xffff0000);
+    xi_draw_circle(img, 400, 300, 200, 0xff0000ff);
+    xi_draw_rect(img, 100, 200, 200, 200, 0xaa00ff00);
+    xi_draw_triangle(img, 500, 400, 600, 100, 700, 400, 0xaaff0000);
 
     stbi_write_png("ximage.png", img->width, img->height, 4, (void *)img->data, 4*img->width);
     free(img->data);
