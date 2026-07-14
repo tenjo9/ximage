@@ -1,6 +1,6 @@
-//#define MODE_DUMB
+#define MODE_DUMB
 //#define MODE_AA
-#define MODE_DEBUG_TRIANGLES
+//#define MODE_DEBUG_TRIANGLES
 //#define MODE_DEBUG_POINTS
 
 #include <math.h>
@@ -121,20 +121,15 @@ bool find_bbox
 bool is_in_triangle
 (
     double x, double y,
-    int x1, int y1,
-    int x2, int y2,
-    int x3, int y3,
+    double x1, double y1,
+    double x2, double y2,
+    double x3, double y3,
     double *D, double *l1, double *l2, double *l3
 )
 {
-    double X  = (double)x, Y =  (double)y;
-    double X1 = (double)x1, Y1 = (double)y1;
-    double X2 = (double)x2, Y2 = (double)y2;
-    double X3 = (double)x3, Y3 = (double)y3;
-
-    *D  = (double)( (Y2 - Y3)*(X1 - X3) + (X3 - X2)*(Y1 - Y3) );
-    *l1 = (double)( (Y2 - Y3)*(X  - X3) + (X3 - X2)*(Y  - Y3) ) / *D;
-    *l2 = (double)( (Y3 - Y1)*(X  - X3) + (X1 - X3)*(Y  - Y3) ) / *D;
+    *D  = ( (y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3) );
+    *l1 = ( (y2 - y3)*(x  - x3) + (x3 - x2)*(y  - y3) ) / *D;
+    *l2 = ( (y3 - y1)*(x  - x3) + (x1 - x3)*(y  - y3) ) / *D;
     *l3 = 1.0 - *l1 - *l2;
 
     #define EPS -1e-14
@@ -193,16 +188,16 @@ void draw_circle(struct Image *img, int x0, int y0, int r, uint32_t color)
 void draw_triangle
 (
     struct Image *img,
-    int x1, int y1,
-    int x2, int y2,
-    int x3, int y3,
+    double x1, double y1,
+    double x2, double y2,
+    double x3, double y3,
     uint32_t color
 )
 {
     int left, right;
     int bottom, top;
 
-    if (find_bbox(img, x1, y1, x2, y2, x3, y3, &left, &right, &bottom, &top))
+    if (find_bbox(img, (int)x1, (int)y1, (int)x2, (int)y2, (int)x3, (int)y3, &left, &right, &bottom, &top))
     for (int x = left; x <= right; ++x)
     {
         for (int y = top; y <= bottom; ++y)
@@ -217,9 +212,9 @@ void draw_triangle
 void draw_triangle_source
 (
     struct Image *img,
-    int x1, int y1,
-    int x2, int y2,
-    int x3, int y3,
+    double x1, double y1,
+    double x2, double y2,
+    double x3, double y3,
     uint32_t (*color)
     (
         double x, double y,
@@ -232,7 +227,7 @@ void draw_triangle_source
     int left, right;
     int bottom, top;
 
-    if (find_bbox(img, x1, y1, x2, y2, x3, y3, &left, &right, &bottom, &top))
+    if (find_bbox(img, (int)x1, (int)y1, (int)x2, (int)y2, (int)x3, (int)y3, &left, &right, &bottom, &top))
     for (int x = left; x <= right; ++x)
     {
         for (int y = top; y <= bottom; ++y)
@@ -247,15 +242,15 @@ void draw_triangle_source
 void draw_triangle_aa
 (
     struct Image *map,
-    int x1, int y1,
-    int x2, int y2,
-    int x3, int y3
+    double x1, double y1,
+    double x2, double y2,
+    double x3, double y3
 )
 {
     int left, right;
     int bottom, top;
 
-    if (find_bbox(map, x1, y1, x2, y2, x3, y3, &left, &right, &bottom, &top))
+    if (find_bbox(map, (int)x1, (int)y1, (int)x2, (int)y2, (int)x3, (int)y3, &left, &right, &bottom, &top))
     for (int x = left; x <= right; ++x)
     {
         for (int y = top; y <= bottom; ++y)
@@ -265,26 +260,6 @@ void draw_triangle_aa
             double yf = (double)y;
 
             uint32_t alpha = 0;
-
-            /*
-            if (is_in_triangle(xf+0.5, yf+0.5, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                ++alpha;
-            if (is_in_triangle(xf+0.5, yf-0.5, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                ++alpha;
-            if (is_in_triangle(xf-0.5, yf-0.5, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                ++alpha;
-            if (is_in_triangle(xf-0.5, yf+0.5, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                ++alpha;
-
-            if (is_in_triangle(xf+0.25, yf+0.25, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                ++alpha;
-            if (is_in_triangle(xf+0.25, yf-0.25, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                ++alpha;
-            if (is_in_triangle(xf-0.25, yf-0.25, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                ++alpha;
-            if (is_in_triangle(xf-0.25, yf+0.25, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3))
-                ++alpha;
-            */
 
             if (is_in_triangle(xf-0.5,  yf-0.5, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3)) ++alpha;
             if (is_in_triangle(xf-0.25, yf-0.5, x1, y1, x2, y2, x3, y3, &D, &l1, &l2, &l3)) ++alpha;
@@ -369,73 +344,75 @@ v2i v2i_norm(v2i v)
 // ADVANCED DRAWING FUNCTIONS
 //
 
-void draw_curve
-(
-    struct Image *img,
-    v2f *points, size_t points_size,
-    v2f scale, v2f offset,
-    uint32_t color, double thick
-)
+void calculate_normales(v2f *points, size_t psize, v2f **normales, size_t *nsize, double thick)
 {
-    size_t normales_size = points_size * 2;
-    v2i *normales = malloc(normales_size * sizeof(v2i));
-    #define w2s(v) v2f_fold(v2f_mul(v, scale), offset)
+    *nsize    = psize*2;
+    *normales = malloc((size_t)*nsize * sizeof(v2f));
 
-    for (size_t i = 0; i < points_size-1; ++i)
+    for (size_t i = 0; i < psize-1; ++i)
     {
-        v2f vi  = v2f_fold(v2f_mul(points[i],   scale), offset);
-        v2f vii = v2f_fold(v2f_mul(points[i+1], scale), offset);
+        v2f vi  = points[i];
+        v2f vii = points[i+1];
 
         v2f t  = v2f_sub(vii, vi);
         v2f n1 = v2f_mulv(v2f_norm(v2ff( t.y, -t.x)), thick/2.0);
         v2f n2 = v2f_mulv(v2f_norm(v2ff(-t.y,  t.x)), thick/2.0);
 
-        normales[i*2]     = v2if(v2f_fold(n1, vi));
-        normales[i*2 + 1] = v2if(v2f_fold(n2, vi));
+        (*normales)[i*2]     = v2f_fold(n1, vi);
+        (*normales)[i*2 + 1] = v2f_fold(n2, vi);
     }
 
     {
-        v2f vl  = v2f_fold(v2f_mul(points[points_size-1], scale), offset);
-        v2f vll = v2f_fold(v2f_mul(points[points_size-2], scale), offset);
+        v2f vl  = points[psize-1];
+        v2f vll = points[psize-2];
 
         v2f t  = v2f_sub(vll, vl);
         v2f n1 = v2f_mulv(v2f_norm(v2ff( t.y, -t.x)), thick/2.0);
         v2f n2 = v2f_mulv(v2f_norm(v2ff(-t.y,  t.x)), thick/2.0);
 
-        normales[normales_size-2] = v2if(v2f_fold(n2, vl));
-        normales[normales_size-1] = v2if(v2f_fold(n1, vl));
+        (*normales)[*nsize-2] = v2f_fold(n2, vl);
+        (*normales)[*nsize-1] = v2f_fold(n1, vl);
     }
+}
+
+void draw_curve(struct Image *img, v2f *points, size_t psize, uint32_t color, double thick)
+{
+    size_t nsize = 0;
+    v2f *normales = NULL;
+
+    calculate_normales(points, psize, &normales, &nsize, thick);
 
     #ifdef MODE_DUMB
-    for (size_t i = 0; i < normales_size-2; ++i)
+    for (size_t i = 0; i < psize-1; ++i)
     {
-        v2i v1 = normales[i];
-        v2i v2 = normales[i+1];
-        v2i v3 = normales[i+2];
-
+        v2f v1 = normales[i*2];
+        v2f v2 = normales[i*2+1];
+        v2f v3 = normales[i*2+2];
+        v2f v4 = normales[i*2+3];
         draw_triangle(img, v1.x, v1.y, v2.x, v2.y, v3.x, v3.y, color);
+        draw_triangle(img, v2.x, v2.y, v3.x, v3.y, v4.x, v4.y, color);
     }
     #endif
 
     #ifdef MODE_DEBUG_TRIANGLES
-    for (size_t i = 0; i < normales_size-2; ++i)
+    for (size_t i = 0; i < psize-1; ++i)
     {
-        (void)color;
-        v2i v1 = normales[i];
-        v2i v2 = normales[i+1];
-        v2i v3 = normales[i+2];
-
+        v2f v1 = normales[i*2];
+        v2f v2 = normales[i*2+1];
+        v2f v3 = normales[i*2+2];
+        v2f v4 = normales[i*2+3];
         draw_triangle_source(img, v1.x, v1.y, v2.x, v2.y, v3.x, v3.y, color1);
+        draw_triangle_source(img, v2.x, v2.y, v3.x, v3.y, v4.x, v4.y, color1);
     }
     #endif
 
     #ifdef MODE_DEBUG_POINTS
-    for (size_t i = 0; i < points_size; ++i)
+    for (size_t i = 0; i < psize; ++i)
     {
         (void)color;
-        v2i c  = v2if(v2f_fold(v2f_mul(points[i], scale), offset));
-        v2i v1 = normales[i*2];
-        v2i v2 = normales[i*2+1];
+        v2i c  = v2if(points[i]);
+        v2i v1 = v2if(normales[i*2]);
+        v2i v2 = v2if(normales[i*2+1]);
 
         draw_circle(img,  c.x,  c.y, 1, 0xff00ff00);
         draw_circle(img, v1.x, v1.y, 1, 0xff0000ff);
@@ -444,49 +421,21 @@ void draw_curve
     #endif
 }
 
-void draw_curve_aa
-(
-    struct Image *map,
-    v2f *points, size_t points_size,
-    v2f scale, v2f offset,
-    double thick
-)
+void draw_curve_aa(struct Image *map, v2f *points, size_t psize, double thick)
 {
-    size_t normales_size = points_size * 2;
-    v2i *normales = malloc(normales_size * sizeof(v2i));
-    #define w2s(v) v2f_fold(v2f_mul(v, scale), offset)
+    size_t nsize  = 0;
+    v2f *normales = NULL;
 
-    for (size_t i = 0; i < points_size-1; ++i)
+    calculate_normales(points, psize, &normales, &nsize, thick);
+
+    for (size_t i = 0; i < psize-1; ++i)
     {
-        v2f vi  = v2f_fold(v2f_mul(points[i],   scale), offset);
-        v2f vii = v2f_fold(v2f_mul(points[i+1], scale), offset);
-
-        v2f t  = v2f_sub(vii, vi);
-        v2f n1 = v2f_mulv(v2f_norm(v2ff( t.y, -t.x)), thick/2.0);
-        v2f n2 = v2f_mulv(v2f_norm(v2ff(-t.y,  t.x)), thick/2.0);
-
-        normales[i*2]     = v2if(v2f_fold(n1, vi));
-        normales[i*2 + 1] = v2if(v2f_fold(n2, vi));
-    }
-
-    {
-        v2f vl  = v2f_fold(v2f_mul(points[points_size-1], scale), offset);
-        v2f vll = v2f_fold(v2f_mul(points[points_size-2], scale), offset);
-
-        v2f t  = v2f_sub(vll, vl);
-        v2f n1 = v2f_mulv(v2f_norm(v2ff( t.y, -t.x)), thick/2.0);
-        v2f n2 = v2f_mulv(v2f_norm(v2ff(-t.y,  t.x)), thick/2.0);
-
-        normales[normales_size-2] = v2if(v2f_fold(n2, vl));
-        normales[normales_size-1] = v2if(v2f_fold(n1, vl));
-    }
-
-    for (size_t i = 0; i < normales_size-2; ++i)
-    {
-        v2i v1 = normales[i];
-        v2i v2 = normales[i+1];
-        v2i v3 = normales[i+2];
+        v2f v1 = normales[i*2];
+        v2f v2 = normales[i*2+1];
+        v2f v3 = normales[i*2+2];
+        v2f v4 = normales[i*2+3];
         draw_triangle_aa(map, v1.x, v1.y, v2.x, v2.y, v3.x, v3.y);
+        draw_triangle_aa(map, v2.x, v2.y, v3.x, v3.y, v4.x, v4.y);
     }
 }
 
@@ -568,7 +517,7 @@ int main(void)
     uint32_t colors[]         = {0xff0de026, 0xffed1544, 0xff6a00ce,  0xff02d0e2}; (void)colors;
     size_t fsize = sizeof(funcs)/sizeof(funcs[0]);
 
-    v2f curve[100] = {0};
+    v2f curve[1000] = {0};
     size_t csize = sizeof(curve)/sizeof(curve[0]);
 
     #ifdef MODE_AA
@@ -585,15 +534,15 @@ int main(void)
         {
             double x = left + dx*(double)j;
             double y = funcs[i](x);
-            curve[j] = v2ff(x, y);
+            curve[j] = v2f_fold(v2f_mul(v2ff(x, y), scale), offset);
         }
 
         #if defined(MODE_DUMB) || defined(MODE_DEBUG_TRIANGLES) || defined(MODE_DEBUG_POINTS)
-            draw_curve(&img, curve, csize, scale, offset, colors[i], 5.0);
+            draw_curve(&img, curve, csize, colors[i], 20.0);
         #endif
 
         #ifdef MODE_AA
-            draw_curve_aa(&map, curve, csize, scale, offset, 15.0);
+            draw_curve_aa(&map, curve, csize, 10.0);
         #endif
     }
 

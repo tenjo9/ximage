@@ -22,6 +22,25 @@ int main(void)
     xi_draw_rect(img, 100, 200, 200, 200, 0xaa00ff00);
     xi_draw_triangle(img, 500, 400, 600, 100, 700, 400, 0xaaff0000);
 
+
+
+    XImage *spr = &(XImage){0};
+    spr->width = 100;
+    spr->height = 100;
+    spr->data = malloc((size_t)(spr->width * spr->height) * 4);
+    if (!spr->data)
+    {
+        fprintf(stderr, "Image memory allocation error\n");
+        exit(69);
+    }
+
+    xi_fill_bg(spr, 0xff222222);
+    xi_draw_circle(spr, 50, 50, 50, 0xffff00ff);
+    xi_draw_sprite(img, spr, 0, 0);
+
+    xi_draw_rect(img, 0, 100, 100, 100, 0xff000000);
+
+
     stbi_write_png("ximage.png", img->width, img->height, 4, (void *)img->data, 4*img->width);
     free(img->data);
     return 0;

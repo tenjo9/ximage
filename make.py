@@ -3,56 +3,76 @@ import sys
 import subprocess
 from pathlib import Path
 
+RED   = "\033[31m"
+BLUE  = "\033[34m"
+RESET = "\033[0m"
 
+
+target = "image"
 cc = ["gcc"]
 warnings = ["-Wall", "-Wextra", "-Wconversion", "-std=c11", "-pedantic"]
+flags = ["-I./build/", "-o", f"./{target}"]
 src = ["./build/stb_image_write.o"]
 libs = ["-lm"]
 
 
 argc = len(sys.argv)
-if argc == 1:
-    print("Nothing")
+argv = sys.argv
 
-elif argc == 2:
-    if sys.argv[1] == "rm":
-        subprocess.run(["rm", "./a.out"])
-        subprocess.run(["rm", "./image.png"])
+if argc < 3:
+    print(f"{RED}Too few arguments{RESET}")
+    sys.exit()
 
-    elif sys.argv[1] == "clear":
-        subprocess.run(["rm", "-rf", "./build"])
-        
+if argc > 3:
+    print(f"{RED}Too many arguments{RESET}")
+    sys.exit()
+
+match argv[1]:
+    case "c":
+        src.append(argv[2])
+    case "g":
+        src.append(argv[2])
+        flags.append("-g")
+    case "O3":
+        src.append(argv[2])
+        flags.append("-O3")
+    case _:
+        print(f"{RED}Uknown option {argv[1]}{RESET}")
+        sys.exit()
+
+
+build = Path("./build/")
+if not build.exists():
+    build.mkdir()
+    print(f"{BLUE}Created {str(build)}{RESET}")
+
+    if subprocess.run(["wget", "https://github.com/nothings/stb/raw/refs/heads/master/stb_image_write.h", "-O", "./build/stb_image_write.h"]).returncode != 0:
+        print(f"{RED}Failed downloading stb_image_write.h{RESET}")
+        sys.exit()
+
+    with open("./build/stb_image_write.c", "w") as stb_file:
+        stb_file.write("#define STB_IMAGE_WRITE_IMPLEMENTATION\n")
+        stb_file.write("#include \"stb_image_write.h\"\n")
+
+    if subprocess.run(["gcc", "-I./build", "-c", "-o", "./build/stb_image_write.o", "./build/stb_image_write.c"]).returncode == 0:
+        print(f"{BLUE}Compiled ./build/stb_image_write.o{RESET}")
     else:
-        build_dir = Path("./build/")
-        if not build_dir.exists():
-            build_dir.mkdir()
-            print("Created ./build/")
+        print(f"{RED}Failed compiling ./build/stb_image_write.c{RESET}")
+        sys.exit()
 
 
-        if not Path("./build/stb_image_write.o").exists():
-
-            with open("./build/stb_image_write.c", "w") as stb_file:
-                stb_file.write("#define STB_IMAGE_WRITE_IMPLEMENTATION\n")
-                stb_file.write("#include \"../stb_image_write.h\"\n")
-
-            result = subprocess.run(["gcc", "-c", "-o", "./build/stb_image_write.o", "./build/stb_image_write.c"])
-            if result.returncode == 0:
-                print("Compiled stb_image_write.o")
-            else:
-                print("Failed compiling stb_image_write.c")
-                sys.exit()
-
-
-        src.append(sys.argv[1])
-        run = cc + warnings + src + libs
-        compile_result = subprocess.run(run)
-        if compile_result.returncode == 0:
-            print("Compilation successful")
-            run_result = subprocess.run(["./a.out"])
-            if run_result.returncode == 0:
-                print("Running successful")
-            else:
-                print(f"Exited with {run_result.returncode} code")
-
+cmd = cc + warnings + flags + src + libs
+print(f"{BLUE}Compiling: {cmd}{RESET}")
+if subprocess.run(cmd).returncode == 0:
+    print(f"{BLUE}Successfully{RESET}")
 else:
-    print("Too much arguments")
+    print(f"{RED}Failed{RESET}")
+    sys.exit()
+
+print(f"{BLUE}Running: ./{target}{RESET}")
+returncode = subprocess.run(f"./{target}").returncode
+if returncode == 0:
+    print(f"{BLUE}Successfully{RESET}")
+else:
+    print(f"{RED}Failed with code {returncode}{RESET}")
+    sys.exit()
