@@ -1,5 +1,5 @@
-#define MODE_DUMB
-//#define MODE_AA
+//#define MODE_DUMB
+#define MODE_AA
 //#define MODE_DEBUG_TRIANGLES
 //#define MODE_DEBUG_POINTS
 
