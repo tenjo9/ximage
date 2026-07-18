@@ -97,7 +97,7 @@ bool xi_is_in_triangle
     double *D, double *l1, double *l2, double *l3
 )
 {
-    double X  = (double)x, Y =  (double)y;
+    double X  = (double)x + 0.5, Y =  (double)y + 0.5;
     double X1 = (double)x1, Y1 = (double)y1;
     double X2 = (double)x2, Y2 = (double)y2;
     double X3 = (double)x3, Y3 = (double)y3;
