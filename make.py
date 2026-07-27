@@ -23,22 +23,18 @@ if argc < 3:
     print(f"{RED}Too few arguments{RESET}")
     sys.exit()
 
-if argc > 3:
-    print(f"{RED}Too many arguments{RESET}")
-    sys.exit()
-
 match argv[1]:
     case "c":
-        src.append(argv[2])
+        pass
     case "g":
-        src.append(argv[2])
         flags.append("-g")
     case "O3":
-        src.append(argv[2])
         flags.append("-O3")
     case _:
         print(f"{RED}Uknown option {argv[1]}{RESET}")
         sys.exit()
+argv = argv[2:]
+src += argv
 
 
 build = Path("./build/")
