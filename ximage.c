@@ -7,20 +7,12 @@
 
 int main(void)
 {
-    XImage *img = &(XImage){0};
-    img->width = 800;
-    img->height = 600;
-    img->data = malloc((size_t)(img->width * img->height) * 4);
-    if (!img->data)
-    {
-        fprintf(stderr, "Image memory allocation error\n");
-        exit(69);
-    }
+    XImage img = xi_new(800, 600);
 
-    xi_fill_bg(img, 0xff424242);
-    xi_draw_circle(img, 400, 300, 200, 0xff0000ff);
-    xi_draw_rect(img, 100, 200, 200, 200, 0xaa00ff00);
-    xi_draw_triangle(img, 500, 400, 600, 100, 700, 400, 0xaaff0000);
+    xi_fill_bg(&img, 0xff424242);
+    xi_draw_circle(&img, 400, 300, 200, 0xff0000ff);
+    xi_draw_rect(&img, 100, 200, 200, 200, 0xaa00ff00);
+    xi_draw_triangle(&img, 500, 400, 600, 100, 700, 400, 0xaaff0000);
 
 
 
@@ -34,14 +26,11 @@ int main(void)
         exit(69);
     }
 
-    xi_fill_bg(spr, 0xff222222);
     xi_draw_circle(spr, 50, 50, 50, 0xffff00ff);
-    xi_draw_sprite(img, spr, 0, 0);
-
-    xi_draw_rect(img, 0, 100, 100, 100, 0xff000000);
+    xi_draw_sprite(&img, spr, 250, 250);
 
 
-    stbi_write_png("ximage.png", img->width, img->height, 4, (void *)img->data, 4*img->width);
-    free(img->data);
+    stbi_write_png("ximage.png", img.width, img.height, 4, (void *)img.data, 4*img.width);
+    xi_delete(&img);
     return 0;
 }

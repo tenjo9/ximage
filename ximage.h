@@ -12,13 +12,13 @@
 #define XI_GET_PIXEL(img, x, y)        &(img)->data[(y)*(img)->width + (x)]
 #define XI_GET_COLOR(img, x, y)         (img)->data[(y)*(img)->width + (x)]
 
-#define XI_RGBA(r, g, b, a) (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(a) << 24
-#define XI_RGB(r, g, b)     (uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(0xff) << 24
+#define XI_RGBA(r, g, b, a) ((uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(a) << 24)
+#define XI_RGB(r, g, b)     ((uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(0xff) << 24)
 
-#define XI_GET_R(color) ((color) >> 0)  & 0xff
-#define XI_GET_G(color) ((color) >> 8)  & 0xff
-#define XI_GET_B(color) ((color) >> 16) & 0xff
-#define XI_GET_A(color) ((color) >> 24) & 0xff
+#define XI_GET_R(color) (((color) >> 0)  & 0xff)
+#define XI_GET_G(color) (((color) >> 8)  & 0xff)
+#define XI_GET_B(color) (((color) >> 16) & 0xff)
+#define XI_GET_A(color) (((color) >> 24) & 0xff)
 
 
 struct XImage
@@ -28,6 +28,9 @@ struct XImage
 };
 typedef struct XImage XImage;
 
+
+XImage xi_new(int width, int height);
+void xi_delete(XImage *xi);
 
 uint32_t xi_blend_colors(uint32_t colorA, uint32_t colorB);
 bool xi_find_bbox(XImage *img, int *x, int *y, size_t count, int *left, int *right, int *bottom, int *top);
@@ -42,6 +45,28 @@ void xi_draw_sprite(XImage *img, XImage *sprite, int x0, int y0);
 
 #ifdef XIMAGE_IMPLEMENTATION
 
+
+XImage xi_new(int width, int height)
+{
+    void *data = malloc((size_t)(width * height) * 4);
+    if (!data)
+    {
+        fprintf(stderr, "Image memory allocation error\n");
+        exit(69);
+    }
+    memset(data, 0, (size_t)(width * height) * 4);
+    return (XImage) { width, height, data };
+}
+
+void xi_delete(XImage *xi)
+{
+    free(xi->data);
+    xi->width = 0;
+    xi->height = 0;
+    xi->data = NULL;
+}
+
+
 uint32_t xi_blend_colors(uint32_t colorA, uint32_t colorB)
 {
     uint32_t rA = XI_GET_R(colorA);
@@ -52,13 +77,12 @@ uint32_t xi_blend_colors(uint32_t colorA, uint32_t colorB)
     uint32_t rB = XI_GET_R(colorB);
     uint32_t gB = XI_GET_G(colorB);
     uint32_t bB = XI_GET_B(colorB);
-    uint32_t aB = XI_GET_A(colorB);
 
     uint32_t rC = (rB*(255 - aA) + rA*aA) / 255; if (rC > 255) rC = 255;
     uint32_t gC = (gB*(255 - aA) + gA*aA) / 255; if (gC > 255) gC = 255;
     uint32_t bC = (bB*(255 - aA) + bA*aA) / 255; if (bC > 255) bC = 255;
 
-    return XI_RGBA(rC, gC, bC, aB);
+    return XI_RGBA(rC, gC, bC, 255);
 }
 
 // TODO: May be made it variadic
@@ -103,6 +127,8 @@ bool xi_is_in_triangle
     double X3 = (double)x3, Y3 = (double)y3;
 
     *D  = (double)( (Y2 - Y3)*(X1 - X3) + (X3 - X2)*(Y1 - Y3) );
+    if (fabs(*D) < 1e-10) return false;
+
     *l1 = (double)( (Y2 - Y3)*(X  - X3) + (X3 - X2)*(Y  - Y3) ) / *D;
     *l2 = (double)( (Y3 - Y1)*(X  - X3) + (X1 - X3)*(Y  - Y3) ) / *D;
     *l3 = 1.0 - *l1 - *l2;
@@ -206,7 +232,7 @@ void xi_draw_sprite(XImage *img, XImage *sprite, int x0, int y0)
     {
         for (int y = top; y <= bottom; ++y)
         {
-            XI_PUT_PIXEL(img, x, y, XI_GET_COLOR(sprite, x-left, y-top));
+            XI_PUT_PIXEL(img, x, y, xi_blend_colors(XI_GET_COLOR(sprite, x-left, y-top), XI_GET_COLOR(img, x, y)));
         }
     }
 }
