@@ -21,16 +21,20 @@ void point3d(XImage3D *ctx, double x, double y, double z, int r, uint32_t color)
     xi_draw_circle(ctx->img, p.x, p.y, r, color);
 }
 
+uint32_t rainbow_src(Triangle *t, double l1, double l2, double l3)
+{
+    (void)t;
+    return XI_RGB(l1*255, l2*255, l3*255);
+}
+
 int main(void)
 {
-    XImage img = xi_new(800, 600);
+    XImage img = xi_new(4000, 2000);
     xi_fill_bg(&img, 0xff424242);
 
 
     Camera c = {
-        .pos = v3dd( 7.0, -7.0, 5.0 ),
-        //.pos = v3dd( 1.0, 2.0, 3.0 ),
-        //.pos = v3dd( 10.0, 10.0, 10.0 ),
+        .pos = v3dd( 3.0, 10.0, 5.0 ),
         .tar = v3dd( 0.0, 0.0, 0.0 ),
         .up  = v3dd( 0.0, 0.0, 1.0 ),
         .fov = 90.0*3.1415/180.0,
@@ -41,7 +45,7 @@ int main(void)
 
 
     XImage3D ctx = xi_3d(&img, &c);
-    v3d sun = { 5.0, 5.0, 5.0 };
+    v3d sun = { 5.0, 0.0, 5.0 };
 
 
     for (int i = -10; i < 10; ++i)
@@ -54,13 +58,13 @@ int main(void)
 
 
     utah_teapot.pos = v3dd(0.0, 5.0, -1.0);
-    xi_draw_model_debug_random(&ctx, &utah_teapot);
+    xi_draw_model_lambert(&ctx, &utah_teapot, 0.2, sun, 0xffff00ff);
 
     utah_teapot.pos = v3dd(0.0, 0.0, -1.0);
-    xi_draw_model_debug_random(&ctx, &utah_teapot);
+    xi_draw_model_lambert_debug(&ctx, &utah_teapot, 0.2, sun);
 
     utah_teapot.pos = v3dd(0.0, -5.0, -1.0);
-    xi_draw_model_debug_rainbow(&ctx, &utah_teapot);
+    xi_draw_model_lambert_source(&ctx, &utah_teapot, 0.2, sun, rainbow_src);
 
 
     point3d(&ctx, sun.x, sun.y, sun.z, 20, 0xffffffff);
