@@ -31,8 +31,8 @@ def parse_obj(filename):
 
 def write_obj(filename, obj, name):
     with open(filename, "w") as c:
-        c.write(f'#include "3d/ximage_3d.h"\n');
-        c.write(f"Model {name} = {{\n");
+        c.write(f'#include "../ximage_3d.h"\n');
+        c.write(f"XI_Model {name} = {{\n");
 
 
         c.write("    .pos = {0},\n\n")
@@ -56,7 +56,7 @@ def write_obj(filename, obj, name):
         c.write(f"    }},\n\n")
 
 
-        c.write(f"    .fcount = {len(obj['f'])},\n    .faces = (Face[]) {{\n")
+        c.write(f"    .fcount = {len(obj['f'])},\n    .faces = (XI_Face[]) {{\n")
         for f in obj["f"]:
             c.write("        {\n")
             c.write(f"            {int(f[0][0])-1}, {int(f[0][1])-1}, {int(f[0][2])-1},\n")

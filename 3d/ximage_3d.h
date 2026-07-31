@@ -7,10 +7,10 @@
 
 typedef struct
 {
-    size_t v1;  size_t n1;  size_t uv1;
-    size_t v2;  size_t n2;  size_t uv2;
-    size_t v3;  size_t n3;  size_t uv3;
-} Face;
+    size_t v1;  size_t uv1;  size_t n1;
+    size_t v2;  size_t uv2;  size_t n2;
+    size_t v3;  size_t uv3;  size_t n3;
+} XI_Face;
 
 typedef struct
 {
@@ -26,8 +26,8 @@ typedef struct
     v2d *uv;
 
     size_t fcount;
-    Face *faces;
-} Model;
+    XI_Face *faces;
+} XI_Model;
 
 typedef struct
 {
@@ -38,13 +38,13 @@ typedef struct
     double aspect;
     double near;
     double far;
-} Camera;
+} XI_Camera;
 
 typedef struct
 {
     XImage *img;
     double *zbuf;
-    Camera *cam;
+    XI_Camera *cam;
 
     v3d f;
     v3d r;
@@ -61,33 +61,23 @@ typedef struct
     v2d uv1; v2d uv2; v2d uv3;
     int left; int right; int top; int bottom;
     double D;
-} Triangle;
-
-typedef uint32_t (*xi_color_src)(Triangle *t, double l1, double l2, double l3);
+} XI_Triangle;
 
 
-XImage3D xi_3d(XImage *img, Camera *cam);
+XImage3D xi_3d(XImage *img, XI_Camera *cam);
+int xi_update_3d(XImage3D *ctx);
 
 v3d xi_w2c(XImage3D *ctx, v3d v);
 v2i xi_c2s(XImage3D *ctx, v3d v);
 
-void xi_draw_triangle_z(XImage3D *ctx, Triangle *t, uint32_t color);
-void xi_draw_triangle_z_source(XImage3D *ctx, Triangle *t, xi_color_src color);
-
-void xi_draw_model(XImage3D *ctx, Model *m, uint32_t color);
-void xi_draw_model_source(XImage3D *ctx, Model *m, xi_color_src color);
-void xi_draw_model_debug(XImage3D *ctx, Model *m);
-
-
-void xi_draw_triangle_z_lambert(XImage3D *ctx, Triangle *t, double ambient, v3d sun, uint32_t color);
-void xi_draw_triangle_z_lambert_source(XImage3D *ctx, Triangle *t, double ambient, v3d sun, xi_color_src color);
-
-void xi_draw_model_lambert(XImage3D *ctx, Model *m, double ambient, v3d sun, uint32_t color);
-void xi_draw_model_lambert_source(XImage3D *ctx, Model *m, double ambient, v3d sun, xi_color_src color);
-void xi_draw_model_lambert_debug(XImage3D *ctx, Model *m, double ambient, v3d sun);
+void xi_draw_triangle_z(XImage3D *ctx, XI_Triangle *t, double ambient, v3d sun, uint32_t color);
+void xi_draw_model(XImage3D *ctx, XI_Model *m, double ambient, v3d sun, uint32_t color);
 
 
 #define XI_MAX(a, b) (a >= b? a : b)
+#define XI_MIN(a, b) (a <= b? a : b)
+
+#define XI_SHADOW(color, intensity) XI_RGB(XI_GET_R(color)*(intensity), XI_GET_G(color)*intensity, XI_GET_B(color)*intensity)
 
 
 #ifdef XIMAGE_3D_IMPLEMENTATION
@@ -96,7 +86,7 @@ void xi_draw_model_lambert_debug(XImage3D *ctx, Model *m, double ambient, v3d su
 //**********************************************************************
 // Initializing
 
-XImage3D xi_3d(XImage *img, Camera *cam)
+XImage3D xi_3d(XImage *img, XI_Camera *cam)
 {
     v3d f = v3d_normalize(v3d_sub(cam->tar, cam->pos));
     v3d r = v3d_normalize(v3d_cross(f, cam->up));
@@ -118,6 +108,15 @@ XImage3D xi_3d(XImage *img, Camera *cam)
         .f = f, .r = r, .u = u,
         .fv = fv,
     };
+}
+
+int xi_update_3d(XImage3D *ctx)
+{
+    ctx->f = v3d_normalize(v3d_sub(ctx->cam->tar, ctx->cam->pos));
+    ctx->r = v3d_normalize(v3d_cross(ctx->f, ctx->cam->up));
+    ctx->u = v3d_cross(ctx->r, ctx->f);
+    ctx->fv = 1.0 / tan(ctx->cam->fov * 0.5);
+    for (int i = 0; i < ctx->img->width*ctx->img->height; ++i) ctx->zbuf[i] = DBL_MAX;
 }
 
 
@@ -151,6 +150,11 @@ v2i xi_c2s(XImage3D *ctx, v3d v)
 //**********************************************************************
 // Utils
 
+double clampd(double value, double min, double max)
+{
+    return (value < min)? min : (value > max)? max : value;
+}
+
 double baricent(v2i a, v2i b, v2i c)
 {
     v2d A = v2d_fold( v2di(a), v2dd(0.5, 0.5) );
@@ -165,7 +169,7 @@ double baricent(v2i a, v2i b, v2i c)
     return area.z;
 }
 
-bool prepare_triangle(XImage3D *ctx, Triangle *t)
+bool prepare_triangle(XImage3D *ctx, XI_Triangle *t)
 {
     t->c1 = xi_w2c(ctx, t->p1);
     t->c2 = xi_w2c(ctx, t->p2);
@@ -195,9 +199,9 @@ bool prepare_triangle(XImage3D *ctx, Triangle *t)
 
 
 //**********************************************************************
-// Drawing triangles flat
+// Drawing lambert surface
 
-void xi_draw_triangle_z(XImage3D *ctx, Triangle *t, uint32_t color)
+void xi_draw_triangle_z(XImage3D *ctx, XI_Triangle *t, double ambient, v3d sun, uint32_t color)
 {
     for (int x = t->left; x <= t->right; ++x)
     {
@@ -213,143 +217,53 @@ void xi_draw_triangle_z(XImage3D *ctx, Triangle *t, uint32_t color)
                 if (z < ctx->zbuf[ctx->img->width*y + x])
                 {
                     ctx->zbuf[ctx->img->width*y + x] = z;
-                    XI_PUT_PIXEL(ctx->img, x, y, color);
-                }
-            }
-        }
-    }
-}
-
-void xi_draw_triangle_z_source(XImage3D *ctx, Triangle *t, xi_color_src src)
-{
-    for (int x = t->left; x <= t->right; ++x)
-    {
-        for (int y = t->top; y <= t->bottom; ++y)
-        {
-            double l1 = baricent(v2ii(x, y), t->s2, t->s3) / t->D;
-            double l2 = baricent(t->s1, v2ii(x, y), t->s3) / t->D;
-            double l3 = baricent(t->s1, t->s2, v2ii(x, y)) / t->D;
-
-            if (l1 >= -1e-14 && l2 >= -1e-14 && l3 >= -1e-14)
-            {
-                double z = 1.0 / (1.0/t->c1.z*l1 + 1.0/t->c2.z*l2 + 1.0/t->c3.z*l3);
-                if (z < ctx->zbuf[ctx->img->width*y + x])
-                {
-                    ctx->zbuf[ctx->img->width*y + x] = z;
-                    XI_PUT_PIXEL(ctx->img, x, y, src(t, l1, l2, l3));
-                }
-            }
-        }
-    }
-}
 
 
-//**********************************************************************
-// Drawing models flat
-
-void xi_draw_model(XImage3D *ctx, Model *m, uint32_t color)
-{
-    Triangle t = {0};
-
-    for (size_t i = 0; i < m->fcount; ++i)
-    {
-        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
-        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
-        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
-
-        if (!prepare_triangle(ctx, &t))
-            continue;
-
-        xi_draw_triangle_z(ctx, &t, color);
-    }
-}
-
-void xi_draw_model_source(XImage3D *ctx, Model *m, xi_color_src src)
-{
-    Triangle t = {0};
-
-    for (size_t i = 0; i < m->fcount; ++i)
-    {
-        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
-        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
-        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
-
-        if (!prepare_triangle(ctx, &t))
-            continue;
-
-        xi_draw_triangle_z_source(ctx, &t, src);
-    }
-}
-
-void xi_draw_model_debug(XImage3D *ctx, Model *m)
-{
-    Triangle t = {0};
-
-    for (size_t i = 0; i < m->fcount; ++i)
-    {
-        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
-        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
-        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
-
-        if (!prepare_triangle(ctx, &t))
-            continue;
-
-        xi_draw_triangle_z(ctx, &t, XI_RGB(rand()%256, rand()%256, rand()%256));
-    }
-}
-
-//**********************************************************************
-// Drawing triangles lambert
-
-
-void xi_draw_triangle_z_lambert(XImage3D *ctx, Triangle *t, double ambient, v3d sun, uint32_t color)
-{
-    for (int x = t->left; x <= t->right; ++x)
-    {
-        for (int y = t->top; y <= t->bottom; ++y)
-        {
-            double l1 = baricent(v2ii(x, y), t->s2, t->s3) / t->D;
-            double l2 = baricent(t->s1, v2ii(x, y), t->s3) / t->D;
-            double l3 = baricent(t->s1, t->s2, v2ii(x, y)) / t->D;
-
-            if (l1 >= -1e-14 && l2 >= -1e-14 && l3 >= -1e-14)
-            {
-                double q = (1.0/t->c1.z*l1 + 1.0/t->c2.z*l2 + 1.0/t->c3.z*l3);
-                double z = 1.0/q;
-
-                if (z < ctx->zbuf[ctx->img->width*y + x])
-                {
-                    ctx->zbuf[ctx->img->width*y + x] = z;
-
-
-                    v3d p = v3d_div(
-                        v3d_fold( t->p1,
-                            v3d_fold( t->p2, t->p3 )
-                        ),
-                        3
-                    );
-
-                    v3d n = v3d_normalize(v3d_cross( v3d_sub(t->p2, t->p1), v3d_sub(t->p3, t->p1) ));
+                    v3d p = v3d_div(v3d_fold(t->p1, v3d_fold(t->p2, t->p3)), 3);
+                    v3d n = v3d_normalize(v3d_cross(v3d_sub(t->p2, t->p1), v3d_sub(t->p3, t->p1)));
 
                     v3d to_sun = v3d_normalize(v3d_sub(sun, p));
                     double diffuse = XI_MAX(0.0, v3d_dot(n, to_sun));
 
-                    double intencity = ambient + diffuse;
-                    if (intencity > 1.0) intencity = 1.0;
+                    double intensity = ambient + diffuse;
+                    if (intensity > 1.0) intensity = 1.0;
 
 
-                    XI_PUT_PIXEL(ctx->img, x, y, XI_RGB(
-                            XI_GET_R(color)*intencity,
-                            XI_GET_G(color)*intencity,
-                            XI_GET_B(color)*intencity)
-                    );
+                    XI_PUT_PIXEL(ctx->img, x, y, XI_SHADOW(color, intensity));
+                    //XI_PUT_PIXEL(ctx->img, x, y, XI_SHADOW(XI_RGB(l1*255, l2*255, l3*255), intensity));
                 }
             }
         }
     }
 }
 
-void xi_draw_triangle_z_lambert_source(XImage3D *ctx, Triangle *t, double ambient, v3d sun, xi_color_src src)
+void xi_draw_model(XImage3D *ctx, XI_Model *m, double ambient, v3d sun, uint32_t color)
+{
+    XI_Triangle t = {0};
+
+    for (size_t i = 0; i < m->fcount; ++i)
+    {
+        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
+        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
+        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
+
+        t.n1 = v3d_fold(m->pos, m->normales[m->faces[i].n1]);
+        t.n2 = v3d_fold(m->pos, m->normales[m->faces[i].n2]);
+        t.n3 = v3d_fold(m->pos, m->normales[m->faces[i].n3]);
+
+        if (!prepare_triangle(ctx, &t))
+            continue;
+
+        //xi_draw_triangle_z(ctx, &t, ambient, sun, XI_RGB(rand()%256, rand()%256, rand()%256));
+        xi_draw_triangle_z(ctx, &t, ambient, sun, color);
+    }
+}
+
+
+//**********************************************************************
+// Drawing lambert interp
+
+void xi_draw_triangle_z_(XImage3D *ctx, XI_Triangle *t, uint32_t col1, uint32_t col2, uint32_t col3)
 {
     for (int x = t->left; x <= t->right; ++x)
     {
@@ -361,48 +275,29 @@ void xi_draw_triangle_z_lambert_source(XImage3D *ctx, Triangle *t, double ambien
 
             if (l1 >= -1e-14 && l2 >= -1e-14 && l3 >= -1e-14)
             {
-                double q = (1.0/t->c1.z*l1 + 1.0/t->c2.z*l2 + 1.0/t->c3.z*l3);
-                double z = 1.0/q;
-
+                double w1 = 1.0 / t->c1.z*l1;
+                double w2 = 1.0 / t->c2.z*l2;
+                double w3 = 1.0 / t->c3.z*l3;
+                double w = (w1 + w2 + w3);
+                double z = 1.0 / w;
                 if (z < ctx->zbuf[ctx->img->width*y + x])
                 {
                     ctx->zbuf[ctx->img->width*y + x] = z;
 
+                    double r = XI_GET_R(col1)*l1 + XI_GET_R(col2)*l2 + XI_GET_R(col3)*l3; if (r > 255.0) r = 255.0;
+                    double g = XI_GET_G(col1)*l1 + XI_GET_G(col2)*l2 + XI_GET_G(col3)*l3; if (g > 255.0) g = 255.0;
+                    double b = XI_GET_B(col1)*l1 + XI_GET_B(col2)*l2 + XI_GET_B(col3)*l3; if (b > 255.0) b = 255.0;
 
-                    v3d p = v3d_div(
-                        v3d_fold( t->p1,
-                            v3d_fold( t->p2, t->p3 )
-                        ),
-                        3
-                    );
-
-                    v3d n = v3d_normalize(v3d_cross( v3d_sub(t->p2, t->p1), v3d_sub(t->p3, t->p1) ));
-
-                    v3d to_sun = v3d_normalize(v3d_sub(sun, p));
-                    double diffuse = XI_MAX(0.0, v3d_dot(n, to_sun));
-
-                    double intencity = ambient + diffuse;
-                    if (intencity > 1.0) intencity = 1.0;
-
-
-                    uint32_t color = src(t, l1, l2, l3);
-                    XI_PUT_PIXEL(ctx->img, x, y, XI_RGB(
-                            XI_GET_R(color)*intencity,
-                            XI_GET_G(color)*intencity,
-                            XI_GET_B(color)*intencity)
-                    );
+                    XI_PUT_PIXEL(ctx->img, x, y, XI_RGB(r, g, b));
                 }
             }
         }
     }
 }
-//**********************************************************************
-// Drawing models lambert
 
-
-void xi_draw_model_lambert(XImage3D *ctx, Model *m, double ambient, v3d sun, uint32_t color)
+void xi_draw_model_(XImage3D *ctx, XI_Model *m, double ambient, v3d sun, uint32_t color)
 {
-    Triangle t = {0};
+    XI_Triangle t = {0};
 
     for (size_t i = 0; i < m->fcount; ++i)
     {
@@ -410,58 +305,21 @@ void xi_draw_model_lambert(XImage3D *ctx, Model *m, double ambient, v3d sun, uin
         t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
         t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
 
-        if (!prepare_triangle(ctx, &t))
-            continue;
-
         t.n1 = m->normales[m->faces[i].n1];
         t.n2 = m->normales[m->faces[i].n2];
         t.n3 = m->normales[m->faces[i].n3];
 
-        xi_draw_triangle_z_lambert(ctx, &t, ambient, sun, color);
-    }
-}
-
-void xi_draw_model_lambert_source(XImage3D *ctx, Model *m, double ambient, v3d sun, xi_color_src src)
-{
-    Triangle t = {0};
-
-    for (size_t i = 0; i < m->fcount; ++i)
-    {
-        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
-        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
-        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
-
         if (!prepare_triangle(ctx, &t))
             continue;
 
-        t.n1 = m->normales[m->faces[i].n1];
-        t.n2 = m->normales[m->faces[i].n2];
-        t.n3 = m->normales[m->faces[i].n3];
+        double i1 = ambient + clampd(v3d_dot(t.n1, v3d_normalize(v3d_sub(sun, t.p1))), 0.0, 1.0); if (i1 > 1.0) i1 = 1.0;
+        double i2 = ambient + clampd(v3d_dot(t.n2, v3d_normalize(v3d_sub(sun, t.p2))), 0.0, 1.0); if (i2 > 1.0) i2 = 1.0;
+        double i3 = ambient + clampd(v3d_dot(t.n3, v3d_normalize(v3d_sub(sun, t.p3))), 0.0, 1.0); if (i3 > 1.0) i3 = 1.0;
 
-        xi_draw_triangle_z_lambert_source(ctx, &t, ambient, sun, src);
+        xi_draw_triangle_z_(ctx, &t, XI_SHADOW(color, i1), XI_SHADOW(color, i2), XI_SHADOW(color, i3));
     }
 }
 
-void xi_draw_model_lambert_debug(XImage3D *ctx, Model *m, double ambient, v3d sun)
-{
-    Triangle t = {0};
-
-    for (size_t i = 0; i < m->fcount; ++i)
-    {
-        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
-        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
-        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
-
-        if (!prepare_triangle(ctx, &t))
-            continue;
-
-        t.n1 = m->normales[m->faces[i].n1];
-        t.n2 = m->normales[m->faces[i].n2];
-        t.n3 = m->normales[m->faces[i].n3];
-
-        xi_draw_triangle_z_lambert(ctx, &t, ambient, sun, XI_RGB(rand()%256, rand()%256, rand()%256));
-    }
-}
 
 #endif
 
