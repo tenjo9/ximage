@@ -54,13 +54,13 @@ int main(void)
 
 
     utah_teapot.pos = v3dd(0.0, 5.0, -1.0);
-    xi_draw_model_(&ctx, &utah_teapot, ambient, sun, 0xff0000ff);
+    xi_draw_model_c3(&ctx, &utah_teapot, ambient, sun, 0xffff0000, 0xff00ff00, 0xff0000ff);
 
     utah_teapot.pos = v3dd(0.0, 0.0, -1.0);
-    xi_draw_model_(&ctx, &utah_teapot, ambient, sun, 0xff00ff00);
+    xi_draw_model_debug(&ctx, &utah_teapot, ambient, sun);
 
     utah_teapot.pos = v3dd(0.0, -5.0, -1.0);
-    xi_draw_model_(&ctx, &utah_teapot, ambient, sun, 0xffff0000);
+    xi_draw_model_c3(&ctx, &utah_teapot, ambient, sun, 0xffff00ff, 0xffff00ff, 0xffff00ff);
 
 
     stbi_write_png("ximage.png", img.width, img.height, 4, (void *)img.data, 4*img.width);
