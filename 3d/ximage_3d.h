@@ -70,12 +70,11 @@ void xi_update_3d(XImage3D *ctx);
 v3d xi_w2c(XImage3D *ctx, v3d v);
 v2i xi_c2s(XImage3D *ctx, v3d v);
 
-void xi_draw_triangle_z(XImage3D *ctx, XI_Triangle *t, uint32_t col);
 void xi_draw_triangle_z_c3(XImage3D *ctx, XI_Triangle *t, uint32_t col1, uint32_t col2, uint32_t col3);
+void xi_draw_model(XImage3D *ctx, XI_Model *m, double ambient, v3d sun, uint32_t color);
 
-void xi_draw_model(XImage3D *ctx, XI_Model *m, double ambient, v3d sun, uint32_t col);
-void xi_draw_model_c3(XImage3D *ctx, XI_Model *m, double ambient, v3d sun, uint32_t col1, uint32_t col2, uint32_t col3);
-void xi_draw_model_debug(XImage3D *ctx, XI_Model *m, double ambient, v3d sun);
+void xi_draw_model_tex(XImage3D *ctx, XI_Model *m, XImage *tex, double ambient, v3d sun)
+void xi_draw_triangle_z_uv(XImage3D *ctx, XI_Triangle *t, XImage *tex, double i1, double i2, double i3)
 
 
 #define XI_MAX(a, b) (a >= b? a : b)
@@ -206,33 +205,6 @@ bool prepare_triangle(XImage3D *ctx, XI_Triangle *t)
 //**********************************************************************
 // Drawing
 
-void xi_draw_triangle_z(XImage3D *ctx, XI_Triangle *t, uint32_t col)
-{
-    for (int x = t->left; x <= t->right; ++x)
-    {
-        for (int y = t->top; y <= t->bottom; ++y)
-        {
-            double l1 = baricent(v2ii(x, y), t->s2, t->s3) / t->D;
-            double l2 = baricent(t->s1, v2ii(x, y), t->s3) / t->D;
-            double l3 = baricent(t->s1, t->s2, v2ii(x, y)) / t->D;
-
-            if (l1 >= -1e-14 && l2 >= -1e-14 && l3 >= -1e-14)
-            {
-                double w1 = 1.0 / t->c1.z*l1;
-                double w2 = 1.0 / t->c2.z*l2;
-                double w3 = 1.0 / t->c3.z*l3;
-                double w = (w1 + w2 + w3);
-                double z = 1.0 / w;
-                if (z < ctx->zbuf[ctx->img->width*y + x])
-                {
-                    ctx->zbuf[ctx->img->width*y + x] = z;
-                    XI_PUT_PIXEL(ctx->img, x, y, col);
-                }
-            }
-        }
-    }
-}
-
 void xi_draw_triangle_z_c3(XImage3D *ctx, XI_Triangle *t, uint32_t col1, uint32_t col2, uint32_t col3)
 {
     for (int x = t->left; x <= t->right; ++x)
@@ -282,70 +254,80 @@ void xi_draw_model(XImage3D *ctx, XI_Model *m, double ambient, v3d sun, uint32_t
         if (!prepare_triangle(ctx, &t))
             continue;
 
-        v3d p = v3d_div(v3d_fold(t.p1, v3d_fold(t.p2, t.p3)), 3);
-        v3d n = v3d_normalize(v3d_cross(v3d_sub(t.p2, t.p1), v3d_sub(t.p3, t.p1)));
-
-        v3d to_sun = v3d_normalize(v3d_sub(sun, p));
-        double diffuse = XI_MAX(0.0, v3d_dot(n, to_sun));
-
-        double intensity = ambient + diffuse;
-        if (intensity > 1.0) intensity = 1.0;
-
-        xi_draw_triangle_z(ctx, &t, XI_SHADOW(color, intensity));
-    }
-}
-
-void xi_draw_model_c3(XImage3D *ctx, XI_Model *m, double ambient, v3d sun, uint32_t col1, uint32_t col2, uint32_t col3)
-{
-    XI_Triangle t = {0};
-
-    for (size_t i = 0; i < m->fcount; ++i)
-    {
-        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
-        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
-        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
-
-        t.n1 = m->normales[m->faces[i].n1];
-        t.n2 = m->normales[m->faces[i].n2];
-        t.n3 = m->normales[m->faces[i].n3];
-
-        if (!prepare_triangle(ctx, &t))
-            continue;
-
         double i1 = ambient + clampd(v3d_dot(t.n1, v3d_normalize(v3d_sub(sun, t.p1))), 0.0, 1.0); if (i1 > 1.0) i1 = 1.0;
         double i2 = ambient + clampd(v3d_dot(t.n2, v3d_normalize(v3d_sub(sun, t.p2))), 0.0, 1.0); if (i2 > 1.0) i2 = 1.0;
         double i3 = ambient + clampd(v3d_dot(t.n3, v3d_normalize(v3d_sub(sun, t.p3))), 0.0, 1.0); if (i3 > 1.0) i3 = 1.0;
 
-        xi_draw_triangle_z_c3(ctx, &t, XI_SHADOW(col1, i1), XI_SHADOW(col2, i2), XI_SHADOW(col3, i3));
-    }
-}
-
-void xi_draw_model_debug(XImage3D *ctx, XI_Model *m, double ambient, v3d sun)
-{
-    XI_Triangle t = {0};
-
-    for (size_t i = 0; i < m->fcount; ++i)
-    {
-        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
-        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
-        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
-
-        t.n1 = m->normales[m->faces[i].n1];
-        t.n2 = m->normales[m->faces[i].n2];
-        t.n3 = m->normales[m->faces[i].n3];
-
-        if (!prepare_triangle(ctx, &t))
-            continue;
-
-        double i1 = ambient + clampd(v3d_dot(t.n1, v3d_normalize(v3d_sub(sun, t.p1))), 0.0, 1.0); if (i1 > 1.0) i1 = 1.0;
-        double i2 = ambient + clampd(v3d_dot(t.n2, v3d_normalize(v3d_sub(sun, t.p2))), 0.0, 1.0); if (i2 > 1.0) i2 = 1.0;
-        double i3 = ambient + clampd(v3d_dot(t.n3, v3d_normalize(v3d_sub(sun, t.p3))), 0.0, 1.0); if (i3 > 1.0) i3 = 1.0;
-
-        uint32_t color = XI_RANDOM;
         xi_draw_triangle_z_c3(ctx, &t, XI_SHADOW(color, i1), XI_SHADOW(color, i2), XI_SHADOW(color, i3));
     }
 }
 
+void xi_draw_triangle_z_uv(XImage3D *ctx, XI_Triangle *t, XImage *tex, double i1, double i2, double i3)
+{
+    for (int x = t->left; x <= t->right; ++x)
+    {
+        for (int y = t->top; y <= t->bottom; ++y)
+        {
+            double l1 = baricent(v2ii(x, y), t->s2, t->s3) / t->D;
+            double l2 = baricent(t->s1, v2ii(x, y), t->s3) / t->D;
+            double l3 = baricent(t->s1, t->s2, v2ii(x, y)) / t->D;
+
+            if (l1 >= -1e-14 && l2 >= -1e-14 && l3 >= -1e-14)
+            {
+                double w1 = 1.0 / t->c1.z*l1;
+                double w2 = 1.0 / t->c2.z*l2;
+                double w3 = 1.0 / t->c3.z*l3;
+                double w = (w1 + w2 + w3);
+                double z = 1.0 / w;
+                if (z < ctx->zbuf[ctx->img->width*y + x])
+                {
+                    ctx->zbuf[ctx->img->width*y + x] = z;
+
+                    double uv_x = (t->uv1.x*w1 + t->uv2.x*w2 + t->uv3.x*w3) / w;
+                    double uv_y = (t->uv1.y*w1 + t->uv2.y*w2 + t->uv3.y*w3) / w;
+
+                    int tex_x = (int)((double)tex->width * uv_x);
+                    int tex_y = (int)((double)tex->height * uv_y);
+                    uint32_t out = tex->data[tex_y*tex->width + tex_x];
+
+                    double i = (i1*w1 + i2*w2 + i3*w3) / w;
+                    out = XI_SHADOW(out, i);
+
+                    XI_PUT_PIXEL(ctx->img, x, y, out);
+                }
+            }
+        }
+    }
+}
+
+void xi_draw_model_tex(XImage3D *ctx, XI_Model *m, XImage *tex, double ambient, v3d sun)
+{
+    XI_Triangle t = {0};
+
+    for (size_t i = 0; i < m->fcount; ++i)
+    {
+        t.p1 = v3d_fold(m->pos, m->vertices[m->faces[i].v1]);
+        t.p2 = v3d_fold(m->pos, m->vertices[m->faces[i].v2]);
+        t.p3 = v3d_fold(m->pos, m->vertices[m->faces[i].v3]);
+
+        t.n1 = m->normales[m->faces[i].n1];
+        t.n2 = m->normales[m->faces[i].n2];
+        t.n3 = m->normales[m->faces[i].n3];
+
+        t.uv1 = m->uv[m->faces[i].uv1];
+        t.uv2 = m->uv[m->faces[i].uv2];
+        t.uv3 = m->uv[m->faces[i].uv3];
+
+        if (!prepare_triangle(ctx, &t))
+            continue;
+
+        double i1 = ambient + clampd(v3d_dot(t.n1, v3d_normalize(v3d_sub(sun, t.p1))), 0.0, 1.0); if (i1 > 1.0) i1 = 1.0;
+        double i2 = ambient + clampd(v3d_dot(t.n2, v3d_normalize(v3d_sub(sun, t.p2))), 0.0, 1.0); if (i2 > 1.0) i2 = 1.0;
+        double i3 = ambient + clampd(v3d_dot(t.n3, v3d_normalize(v3d_sub(sun, t.p3))), 0.0, 1.0); if (i3 > 1.0) i3 = 1.0;
+
+        xi_draw_triangle_z_uv(ctx, &t, tex, i1, i2, i3);
+    }
+}
 
 #endif
 
