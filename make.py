@@ -11,7 +11,7 @@ RESET = "\033[0m"
 target = "image"
 cc = ["gcc"]
 warnings = ["-Wall", "-Wextra", "-Wconversion", "-std=c11", "-pedantic"]
-flags = ["-I./build/", "-o", f"./{target}"]
+flags = ["-I./build/", "-o", f"./{target}", "-g"]
 src = ["./build/stb_image_write.o"]
 libs = ["-lm"]
 
@@ -50,7 +50,7 @@ if not build.exists():
         stb_file.write("#define STB_IMAGE_WRITE_IMPLEMENTATION\n")
         stb_file.write("#include \"stb_image_write.h\"\n")
 
-    if subprocess.run(["gcc", "-I./build", "-c", "-o", "./build/stb_image_write.o", "./build/stb_image_write.c"]).returncode == 0:
+    if subprocess.run(["gcc", "-O3", "-I./build", "-c", "-o", "./build/stb_image_write.o", "./build/stb_image_write.c"]).returncode == 0:
         print(f"{BLUE}Compiled ./build/stb_image_write.o{RESET}")
     else:
         print(f"{RED}Failed compiling ./build/stb_image_write.c{RESET}")

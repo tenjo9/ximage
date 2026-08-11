@@ -29,8 +29,6 @@ int main(void)
     xi_draw_circle(spr, 50, 50, 50, 0xffff00ff);
     xi_draw_sprite(&img, spr, 250, 250);
 
-    xi_draw_line(&img, 0, 0, img.width, img.height, 0xffffffff);
-
 
     stbi_write_png("ximage.png", img.width, img.height, 4, (void *)img.data, 4*img.width);
     xi_delete(&img);
