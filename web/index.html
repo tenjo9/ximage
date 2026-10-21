@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>WASM Drawing Test</title>
+        <style>
+            body {
+                background: #252222;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+    </body>
+    <script>
+        (async () => {
+            const wasm_b64 = "WASM_BLOB";
+            const bytes = Uint8Array.from(atob(wasm_b64), c => c.charCodeAt(0));
+
+            const { instance } = await WebAssembly.instantiate(bytes);
+            const wasm = instance.exports;
+
+            const width  = 800;
+            const height = 600;
+            const ptr    = wasm.canvas;
+            const pixels = new Uint8ClampedArray(wasm.memory.buffer, ptr, width*height*4);
+
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+
+            wasm.draw_demo(0);
+            ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
+
+            let previousTime = 0;
+            function animate(time) {
+                const dt = (time-previousTime)/1000;
+                previousTime = time;
+                wasm.draw_demo(dt);
+                ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
+                requestAnimationFrame(animate);
+            }
+
+            requestAnimationFrame(animate);
+        })();
+    </script>
+</html>
