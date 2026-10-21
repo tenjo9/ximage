@@ -1,1 +1,3 @@
 web/build
+tests/stb.o
+legacy
