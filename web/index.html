@@ -11,7 +11,10 @@
     </head>
     <body>
         <div>
-            <canvas id="canvas" width="800" height="600"></canvas>
+            <canvas id="canvas_a" width="800" height="600"></canvas>
+        </div>
+        <div>
+            <canvas id="canvas_b" width="800" height="600"></canvas>
         </div>
     </body>
     <script>
@@ -27,22 +30,34 @@
             const ptr    = wasm.canvas;
             const pixels = new Uint8ClampedArray(wasm.memory.buffer, ptr, width*height*4);
 
-            const canvas = document.getElementById("canvas");
-            const ctx = canvas.getContext("2d");
+            function start_demo(canvas, draw) {
+                const ctx = canvas.getContext("2d");
+                let animid = null;
+                let last_time = 0;
 
-            wasm.draw_demo(0);
-            ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
+                function animate(time) {
+                    const dt = (time - last_time)/1000;
+                    last_time = time;
+                    draw(dt);
+                    ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
+                    animid = requestAnimationFrame(animate);
+                };
 
-            let previousTime = 0;
-            function animate(time) {
-                const dt = (time-previousTime)/1000;
-                previousTime = time;
-                wasm.draw_demo(dt);
+                canvas.addEventListener("mouseenter", () => {
+                    last_time = performance.now();
+                    animid = requestAnimationFrame(animate);
+                });
+
+                canvas.addEventListener("mouseleave", () => {
+                    cancelAnimationFrame(animid);
+                });
+
+                draw(0);
                 ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
-                requestAnimationFrame(animate);
             }
 
-            requestAnimationFrame(animate);
+            start_demo(canvas_a, wasm.draw_demo_a);
+            start_demo(canvas_b, wasm.draw_demo_b);
         })();
     </script>
 </html>

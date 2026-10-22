@@ -95,9 +95,9 @@ void xi_draw_rect(ximage_t *xi, int x0, int y0, int width, int height, color_t c
     XI_ASSERT(xi != XI_NULL, "xi pointer must not be NULL");
 
     int xstart = x0 >= 0? x0 : 0;
-    int xend   = x0+width < xi->width? x0+width+1 : xi->width;
+    int xend   = x0+width < xi->width? x0+width : xi->width;
     int ystart = y0 >= 0? y0 : 0;
-    int yend   = y0+height < xi->height? y0+height+1 : xi->height;
+    int yend   = y0+height < xi->height? y0+height : xi->height;
 
     for (int y = ystart; y < yend; ++y)
     {
@@ -113,9 +113,9 @@ void xi_draw_circle(ximage_t *xi, int x0, int y0, int r, color_t color)
     XI_ASSERT(xi != XI_NULL, "xi pointer must not be NULL");
 
     int xstart = x0-r >= 0? x0-r : 0;
-    int xend   = x0+r < xi->width? x0+r : xi->width;
+    int xend   = x0+r < xi->width? x0+r+1 : xi->width;
     int ystart = y0-r >= 0? y0-r : 0;
-    int yend   = y0+r < xi->height? y0+r : xi->height;
+    int yend   = y0+r < xi->height? y0+r+1 : xi->height;
     double rsq = (double)(r*r);
 
     for (int y = ystart; y < yend; ++y)
@@ -151,6 +151,7 @@ void xi_draw_triangle(ximage_t *xi, int x1, int y1, int x2, int y2, int x3, int 
     float D = (X3-X1)*(Y2-Y1) - (X2-X1)*(Y3-Y1);
     if (xi_absf(D) < 1.0e-12f)
         return;
+    float recD = 1.0f/D;
 
     for (int y = ystart; y < yend; ++y)
     {
@@ -158,10 +159,10 @@ void xi_draw_triangle(ximage_t *xi, int x1, int y1, int x2, int y2, int x3, int 
         {
             float X = (float)x + 0.5f;
             float Y = (float)y + 0.5f;
-            float l1 = ((X3-X)*(Y2-Y) - (X2-X)*(Y3-Y)) / D;
-            float l2 = ((X2-X)*(Y1-Y) - (X1-X)*(Y2-Y)) / D;
+            float l1 = ((X3-X)*(Y2-Y) - (X2-X)*(Y3-Y)) * recD;
+            float l2 = ((X2-X)*(Y1-Y) - (X1-X)*(Y2-Y)) * recD;
             float l3 = 1.0f - l1 - l2;
-            if (l1 > 1e-12 && l2 > 1e-12 && l3 > 1e-12)
+            if (l1 > 0.0f && l2 > 0.0f && l3 > 0.0f)
                 XI_PUT_PIXEL(xi, x, y, blend_colors(color, XI_GET_COLOR(xi, x, y)));
                 //XI_PUT_PIXEL(xi, x, y,
                     //XI_RGB(

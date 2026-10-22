@@ -10,10 +10,10 @@ build/ximage.b64: build/ximage.wasm
 	base64 -w 0 build/ximage.wasm > build/ximage.b64
 
 build/ximage.wasm: build/ximage.o
-	wasm-ld --no-entry --export=draw_demo --export=canvas --export-memory $< -o $@
+	wasm-ld --no-entry --export=draw_demo_a --export=draw_demo_b --export=canvas --export-memory $< -o $@
 
 build/ximage.o: demo.c ../ximage.h | build
-	clang -O3 -ffreestanding -fno-builtin --target=wasm32-unknown-unknown $(Cflags) $< -c -o $@
+	clang -O3 -ffreestanding -fno-builtin -flto --target=wasm32-unknown-unknown $(Cflags) $< -c -o $@
 
 build:
 	mkdir -p build
