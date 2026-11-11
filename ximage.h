@@ -22,9 +22,9 @@ void xi_put_pixel(ximage_t *xi, int x, int y, color_t color);
 void xi_draw_rect(ximage_t *xi, int x0, int y0, int width, int height, color_t color);
 void xi_draw_circle(ximage_t *xi, int x0, int y0, int r, color_t color);
 void xi_draw_triangle(ximage_t *xi, int x1, int y1, int x2, int y2, int x3, int y3, color_t color);
-void xi_draw_texture(ximage_t *xi, ximage_t *texture, int x0, int y0, int width, int height, unsigned char alpha);
+void xi_draw_texture(ximage_t *xi, ximage_t *texture, int x0, int y0, int width, int height);
 
-#define XI_RGBA(R, G, B, A) (color_t){ .r=(R), .g=(G), .b=(B), .a=(A) }
+//#define XI_RGBA(R, G, B, A) (color_t){ .r=(R), .g=(G), .b=(B), .a=(A) }
 #define XI_RGB(R, G, B) (color_t){ .r=(R), .g=(G), .b=(B), .a=255 }
 
 
@@ -44,8 +44,8 @@ void xi_draw_texture(ximage_t *xi, ximage_t *texture, int x0, int y0, int width,
 #ifdef XI_DEBUG
     color_t *xi_pixel_debug(ximage_t *xi, int x, int y, char *file, int line)
     {
-        XI_ASSERT_VA((x) >= 0 || (x) < (xi)->width, "x out of bounce: %d [%d, %d), in %s:%d", x, 0, xi->width, file, line);
-        XI_ASSERT_VA((y) >= 0 || (y) < (xi)->height, "y out of bounce: %d [%d, %d), in %s:%d", y, 0, xi->height, file, line);
+        XI_ASSERT_VA((x) >= 0 && (x) < (xi)->width, "x out of bounce: %d [%d, %d), in %s:%d", x, 0, xi->width, file, line);
+        XI_ASSERT_VA((y) >= 0 && (y) < (xi)->height, "y out of bounce: %d [%d, %d), in %s:%d", y, 0, xi->height, file, line);
         return xi->data + y*xi->width + x;
     }
     #define XI_PIXEL(xi, x, y) xi_pixel_debug(xi, x, y, __FILE__, __LINE__)
@@ -56,15 +56,15 @@ void xi_draw_texture(ximage_t *xi, ximage_t *texture, int x0, int y0, int width,
 
 static inline color_t blend_colors(color_t fg, color_t bg)
 {
-    unsigned char k = 255 - fg.a;
     color_t color = {
-        .r = (unsigned char)((fg.r*fg.a + bg.r*k)/255),
-        .b = (unsigned char)((fg.b*fg.a + bg.b*k)/255),
-        .g = (unsigned char)((fg.g*fg.a + bg.g*k)/255),
-        .a = 255
+        .r = (unsigned char)((fg.r*fg.a + bg.r*(255 - fg.a))/255),
+        .b = (unsigned char)((fg.b*fg.a + bg.b*(255 - fg.a))/255),
+        .g = (unsigned char)((fg.g*fg.a + bg.g*(255 - fg.a))/255),
+        .a = bg.a
     };
     return color;
 }
+
 
 
 // ==================== MATH ==================== //
@@ -104,26 +104,20 @@ static inline float xi_absf(float a)
 
 void xi_fill_bg(ximage_t *xi, color_t color)
 {
-    XI_ASSERT( (xi) != XI_NULL, "xi is NULL");
-
     for (int i = 0; i < xi->width*xi->height; ++i)
         xi->data[i] = color;
 }
 
 void xi_put_pixel(ximage_t *xi, int x, int y, color_t color)
 {
-    XI_ASSERT( (xi) != XI_NULL, "xi is NULL");
-
     if (x >= 0 && x < xi->width && y >= 0 && y < xi->height)
     {
-        *XI_PIXEL(xi, x, y) = blend_colors(color, *XI_PIXEL(xi, x, y));
+        *XI_PIXEL(xi, x, y) = color;
     }
 }
 
 void xi_draw_rect(ximage_t *xi, int x0, int y0, int width, int height, color_t color)
 {
-    XI_ASSERT( (xi) != XI_NULL, "xi is NULL");
-
     int xstart = x0 >= 0? x0 : 0;
     int xend   = x0+width < xi->width? x0+width : xi->width;
     int ystart = y0 >= 0? y0 : 0;
@@ -133,15 +127,13 @@ void xi_draw_rect(ximage_t *xi, int x0, int y0, int width, int height, color_t c
     {
         for (int x = xstart; x < xend; ++x)
         {
-            *XI_PIXEL(xi, x, y) = blend_colors(color, *XI_PIXEL(xi, x, y));
+            *XI_PIXEL(xi, x, y) = color;
         }
     }
 }
 
 void xi_draw_circle(ximage_t *xi, int x0, int y0, int r, color_t color)
 {
-    XI_ASSERT( (xi) != XI_NULL, "xi is NULL");
-
     if (r == 0)
     {
         xi_put_pixel(xi, x0, y0, color);
@@ -162,7 +154,7 @@ void xi_draw_circle(ximage_t *xi, int x0, int y0, int r, color_t color)
             double my = (double)y - (double)y0 + 0.5;
             if (mx*mx + my*my <= rsq)
             {
-                *XI_PIXEL(xi, x, y) = blend_colors(color, *XI_PIXEL(xi, x, y));
+                *XI_PIXEL(xi, x, y) = color;
             }
         }
     }
@@ -170,8 +162,6 @@ void xi_draw_circle(ximage_t *xi, int x0, int y0, int r, color_t color)
 
 void xi_draw_triangle(ximage_t *xi, int x1, int y1, int x2, int y2, int x3, int y3, color_t color)
 {
-    XI_ASSERT( (xi) != XI_NULL, "xi is NULL");
-
     int xstart = xi_maxi(         0,  xi_mini(x1, xi_mini(x2, x3)));
     int xend   = xi_mini( xi->width,  xi_maxi(x1, xi_maxi(x2, x3)));
     int ystart = xi_maxi(         0,  xi_mini(y1, xi_mini(y2, y3)));
@@ -199,16 +189,13 @@ void xi_draw_triangle(ximage_t *xi, int x1, int y1, int x2, int y2, int x3, int 
             float l2 = ((X2-X)*(Y1-Y) - (X1-X)*(Y2-Y)) * recD;
             float l3 = 1.0f - l1 - l2;
             if (l1 >= 0.0f && l2 >= 0.0f && l3 >= 0.0f)
-                *XI_PIXEL(xi, x, y) = blend_colors(color, *XI_PIXEL(xi, x, y));
+                *XI_PIXEL(xi, x, y) = color;
         }
     }
 }
 
-void xi_draw_texture(ximage_t *xi, ximage_t *texture, int x0, int y0, int width, int height, unsigned char alpha)
+void xi_draw_texture(ximage_t *xi, ximage_t *texture, int x0, int y0, int width, int height)
 {
-    XI_ASSERT( (xi) != XI_NULL, "xi is NULL");
-    XI_ASSERT( (texture) != XI_NULL, "texture NULL");
-
     int xstart = x0 >= 0? x0 : 0;
     int xend   = x0+width < xi->width? x0+width : xi->width;
     int ystart = y0 >= 0? y0 : 0;
@@ -218,18 +205,10 @@ void xi_draw_texture(ximage_t *xi, ximage_t *texture, int x0, int y0, int width,
     {
         for (int x = xstart; x < xend; ++x)
         {
-            color_t fg = *XI_PIXEL(texture,
+            color_t color = *XI_PIXEL(texture,
                 (int)((float)texture->width *(float)(x-x0)/(float)width),
                 (int)((float)texture->height*(float)(y-y0)/(float)height)
             );
-            color_t bg = *XI_PIXEL(xi, x, y);
-            unsigned char k = 255 - alpha;
-            color_t color = {
-                .r = (unsigned char)((fg.r*alpha + bg.r*k)/255),
-                .b = (unsigned char)((fg.b*alpha + bg.b*k)/255),
-                .g = (unsigned char)((fg.g*alpha + bg.g*k)/255),
-                .a = 255
-            };
             *XI_PIXEL(xi, x, y) = color;
         }
     }
