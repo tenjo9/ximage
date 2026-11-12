@@ -16,4 +16,4 @@ build:
 	mkdir -p build
 
 clean:
-	rm -rf build test *.png
+	rm -rf build out *.png
