@@ -2,15 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../../3rdparty/stb_image_write.h"
-
 #define XI_DEBUG
 #define XI_ASSERT(cond, msg)\
     if (!(cond)) { fprintf(stderr, "%s:%d: " msg "\n", __FILE__, __LINE__); exit(-1); }
 #define XI_ASSERT_VA(cond, msg, ...)\
     if (!(cond)) { fprintf(stderr, "%s:%d: " msg "\n", __FILE__, __LINE__, __VA_ARGS__); exit(-1); }
 #define XIMAGE_IMPLEMENTATION
-#include "../../ximage.h"
+#include "../../../ximage.h"
 
 
 #define WIDTH  800
@@ -35,6 +33,7 @@ int main(void)
 
     float position[] = { 0.0f, 0.0f, 5.0f };
     float points[][3] = {
+         // Cube
          {  1.0f,  1.0f, -1.0f },
          {  1.0f, -1.0f, -1.0f },
          { -1.0f, -1.0f, -1.0f },
@@ -44,6 +43,13 @@ int main(void)
          {  1.0f, -1.0f, 1.0f },
          { -1.0f, -1.0f, 1.0f },
          { -1.0f,  1.0f, 1.0f },
+
+         // Triangle
+         //{  0.0f,  1.0f, 0.0f },
+         //{  1.0f, -1.0f, -1.0f },
+         //{ -1.0f, -1.0f, -1.0f },
+         //{  1.0f, -1.0f,  1.0f },
+         //{ -1.0f, -1.0f,  1.0f },
     };
     int points_count = sizeof(points) / sizeof(*points);
 
@@ -51,7 +57,6 @@ int main(void)
     int   fps   = 120;
     float speed = 36.0f;
 
-    int   count = 0;
     float angle = 0.0f;
     float dt    = 1.0f / (float)fps;
 
@@ -99,8 +104,6 @@ int main(void)
                 rgb[i*3 + 2] = img.data[i].b;
             }
             fwrite(rgb, 1, WIDTH*HEIGHT*3, stdout);
-
-            ++count;
         }
     }
 
